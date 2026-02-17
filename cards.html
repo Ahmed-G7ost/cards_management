@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام ادارة مبيعات الفروخ</title>
+    <title>نظام ادارة مبيعات الفروخ - كشف حساب</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
@@ -21,12 +21,26 @@
         .btn-action { border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; color: white; }
         .btn-edit { background: var(--warning); }
         .btn-del { background: var(--danger); }
-        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f1f5f9; }
+        th { background: #f1f5f9; position: sticky; top: 0; }
         .balance-card { background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 25px; }
         .row-batch { background-color: #f0fdf4; font-weight: bold; }
         .error-hint { color: var(--danger); font-size: 0.8rem; font-weight: bold; margin-top: 5px; display: none; }
+        
+        /* تصميم صندوق الفلترة */
+        .filter-section {
+            background: #fffbeb;
+            border: 2px dashed #f59e0b;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .filter-section h4 { margin: 0; color: #92400e; }
+        .filter-input { flex-grow: 1; border: 2px solid #f59e0b; }
     </style>
 </head>
 <body>
@@ -76,7 +90,15 @@
     <button id="submitBtn" class="btn-save" onclick="saveData()">💾 حفظ العملية</button>
     <button id="cancelEdit" class="hidden" onclick="resetForm()" style="margin-top:10px; width:100%; padding:10px; background:#64748b; color:white; border:none; border-radius:10px; cursor:pointer;">إلغاء التعديل</button>
 
-    <div style="overflow-x:auto;">
+    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #e2e8f0;">
+
+    <div class="filter-section">
+        <h4>🔍 كشف حساب موزع:</h4>
+        <input type="text" id="filterName" list="namesList" class="filter-input" placeholder="اكتب اسم الموزع لفلترة نتائجه..." oninput="refreshUI()">
+        <button onclick="document.getElementById('filterName').value=''; refreshUI()" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">عرض الكل</button>
+    </div>
+
+    <div style="overflow-x:auto; max-height: 500px;">
         <table>
             <thead>
                 <tr>
@@ -96,6 +118,7 @@
 </div>
 
 <script>
+    // تهيئة Firebase (بياناتك الأصلية)
     const firebaseConfig = {
         apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
         authDomain: "cards-8397e.firebaseapp.com",
@@ -117,6 +140,7 @@
         const val = snap.val();
         localDB = val ? Object.entries(val).map(([id, data]) => ({id, ...data})) : [];
         refreshUI();
+        updateDatalist();
     });
 
     function toggleUI() {
@@ -149,11 +173,8 @@
         const p = parseFloat(document.getElementById('price').value) || 0;
         const old = parseFloat(document.getElementById('oldDebt').value) || 0;
         const paid = parseFloat(document.getElementById('paid').value) || 0;
-        
         const result = (q * p) + old - paid;
         document.getElementById('remain').value = Math.round(result);
-
-        // إظهار تنبيه مرئي إذا كان المبلغ بالسالب
         const negAlert = document.getElementById('negAlert');
         if (result < 0) {
             negAlert.style.display = 'block';
@@ -168,14 +189,11 @@
         const name = document.getElementById('name').value.trim();
         const type = document.getElementById('opType').value;
         const remainVal = parseFloat(document.getElementById('remain').value);
-
         if (!name) return alert("يرجى إدخال اسم الموزع");
-
-        // القفل الحقيقي: المنع من الحفظ إذا كان الرصيد سيصبح سالباً
         if (remainVal < 0) {
             const currentDebt = (parseFloat(document.getElementById('qty').value) * parseFloat(document.getElementById('price').value)) + 
                                 parseFloat(document.getElementById('oldDebt').value);
-            return alert(`🛑 خطأ محاسبي: لا يمكن قبض مبلغ (${document.getElementById('paid').value}) لأن إجمالي الدين المطلوب هو (${currentDebt}) فقط. \n\nيرجى تصحيح المبلغ.`);
+            return alert(`🛑 خطأ محاسبي: لا يمكن قبض مبلغ (${document.getElementById('paid').value}) لأن إجمالي الدين المطلوب هو (${currentDebt}) فقط.`);
         }
 
         let finalTypeLabel = "";
@@ -213,8 +231,11 @@
         document.getElementById('cancelEdit').classList.add('hidden');
         document.getElementById('paid').value = 0;
         document.getElementById('qty').value = 0;
+        document.getElementById('name').value = "";
+        document.getElementById('oldDebt').value = 0;
+        document.getElementById('remain').value = 0;
+        document.getElementById('displayBal').innerText = 0;
         document.getElementById('opDate').valueAsDate = new Date();
-        fetchUserLastData();
     }
 
     function editItem(id) {
@@ -238,14 +259,27 @@
         if (confirm("حذف العملية؟")) database.child(id).remove();
     }
 
-    function refreshUI() {
-        const tbody = document.getElementById('mainTableBody');
-        tbody.innerHTML = '';
+    function updateDatalist() {
         const namesList = document.getElementById('namesList');
         const uniqueNames = [...new Set(localDB.map(r => r.name))];
         namesList.innerHTML = uniqueNames.map(n => `<option value="${n}">`).join('');
+    }
 
-        [...localDB].sort((a,b) => b.ts - a.ts).forEach(item => {
+    function refreshUI() {
+        const tbody = document.getElementById('mainTableBody');
+        tbody.innerHTML = '';
+        
+        // الحصول على قيمة الفلترة
+        const filterValue = document.getElementById('filterName').value.trim();
+
+        // تصفية البيانات بناءً على الاسم إذا كان الحقل ليس فارغاً
+        let displayData = localDB;
+        if (filterValue !== "") {
+            displayData = localDB.filter(r => r.name.includes(filterValue));
+        }
+
+        // ترتيب من الأحدث للأقدم وعرض البيانات
+        displayData.sort((a,b) => b.ts - a.ts).forEach(item => {
             const isBatch = item.type.includes("طبعة");
             tbody.innerHTML += `
                 <tr class="${isBatch ? 'row-batch' : 'row-payment'}">
