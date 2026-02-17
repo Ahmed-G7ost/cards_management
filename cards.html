@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام ادارة مبيعات الفروخ</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <style>
+        :root { --primary: #2563eb; --success: #22c55e; --danger: #ef4444; --warning: #f59e0b; --background: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--background); direction: rtl; padding: 20px; margin: 0; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .f-group { display: flex; flex-direction: column; }
+        label { font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #475569; }
+        input, select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; }
+        .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
+        .hidden { display: none !important; }
+        .actions-btns { display: flex; gap: 5px; justify-content: center; }
+        .btn-action { border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; color: white; }
+        .btn-edit { background: var(--warning); }
+        .btn-del { background: var(--danger); }
+        table { width: 100%; border-collapse: collapse; margin-top: 25px; background: white; }
+        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f1f5f9; }
+        .balance-card { background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .row-batch { background-color: #f0fdf4; font-weight: 600; }
+        .row-payment { background-color: #ffffff; }
+        .payment-indent { padding-right: 20px; color: #64748b; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="text-align:center; color: var(--primary);">نظام ادارة مبيعات الفروخ </h2>
+
+    <div class="balance-card">
+        <label>الرصيد النهائي الحالي</label>
+        <div id="displayBal" style="font-size: 1.8rem; font-weight: bold; color: var(--danger);">0</div>
+    </div>
+
+    <div class="grid-form">
+        <div class="f-group">
+            <label>اسم الموزع</label>
+            <input type="text" id="name" list="namesList" onchange="fetchUserLastData()">
+            <datalist id="namesList"></datalist>
+        </div>
+
+        <div class="f-group">
+            <label>نوع العملية</label>
+            <select id="opType" onchange="toggleUI()">
+                <option value="طبعة">📦 استلام فروخ (طبعة)</option>
+                <option value="دفعة">💰 تسديد (دفعة مالية)</option>
+            </select>
+        </div>
+
+        <div class="f-group"><label>التاريخ</label><input type="date" id="opDate"></div>
+        <div class="f-group batch-only"><label>رقم الطبعة</label><input type="number" id="batch"></div>
+        
+        <div class="f-group batch-only">
+            <label>عدد الفروخ</label>
+            <input type="number" id="qty" oninput="runCalc()" value="0" step="0.5">
+        </div>
+
+        <div class="f-group batch-only"><label>سعر الفرخ</label><input type="number" id="price" oninput="runCalc()" value="90"></div>
+        
+        <div class="f-group"><label>دين سابق</label><input type="number" id="oldDebt" oninput="runCalc()" value="0"></div>
+        
+        <div class="f-group pay-only hidden">
+            <label>المبلغ المدفوع</label>
+            <input type="number" id="paid" oninput="runCalc()" value="0">
+        </div>
+        
+        <div class="f-group">
+            <label>الباقي النهائي (صحيح)</label>
+            <input type="number" id="remain" readonly style="background:#f0f9ff; font-weight:bold; color:red;">
+        </div>
+    </div>
+
+    <button id="submitBtn" class="btn-save" onclick="saveData()">💾 حفظ العملية</button>
+
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>الموزع</th>
+                    <th>التاريخ</th>
+                    <th>البيان</th>
+                    <th>فروخ</th>
+                    <th>سابق</th>
+                    <th>مدفوع</th>
+                    <th>باقي</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody id="mainTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
+        authDomain: "cards-8397e.firebaseapp.com",
+        databaseURL: "https://cards-8397e-default-rtdb.firebaseio.com",
+        projectId: "cards-8397e",
+        storageBucket: "cards-8397e.firebasestorage.app",
+        messagingSenderId: "509372121697",
+        appId: "1:509372121697:web:a93b9bd262c764f04c2020"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database().ref('distributors');
+    let localDB = [];
+    let editingId = null;
+
+    document.getElementById('opDate').valueAsDate = new Date();
+
+    database.on('value', snap => {
+        const val = snap.val();
+        localDB = val ? Object.entries(val).map(([id, data]) => ({id, ...data})) : [];
+        refreshUI();
+    });
+
+    function toggleUI() {
+        const type = document.getElementById('opType').value;
+        const batchFields = document.querySelectorAll('.batch-only');
+        const payFields = document.querySelectorAll('.pay-only');
+        const oldDebtInput = document.getElementById('oldDebt');
+
+        if (type === 'دفعة') {
+            batchFields.forEach(el => el.classList.add('hidden'));
+            payFields.forEach(el => el.classList.remove('hidden'));
+            oldDebtInput.readOnly = true;
+            document.getElementById('qty').value = 0;
+        } else {
+            batchFields.forEach(el => el.classList.remove('hidden'));
+            payFields.forEach(el => el.classList.add('hidden'));
+            oldDebtInput.readOnly = false;
+        }
+        runCalc();
+    }
+
+    function fetchUserLastData() {
+        const name = document.getElementById('name').value.trim();
+        const userRecords = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
+        const lastBal = userRecords.length > 0 ? Math.round(parseFloat(userRecords[0].remain)) : 0;
+        document.getElementById('oldDebt').value = lastBal;
+        document.getElementById('displayBal').innerText = lastBal;
+        runCalc();
+    }
+
+    function runCalc() {
+        const q = parseFloat(document.getElementById('qty').value) || 0;
+        const p = parseFloat(document.getElementById('price').value) || 0;
+        const old = parseFloat(document.getElementById('oldDebt').value) || 0;
+        const paid = parseFloat(document.getElementById('paid').value) || 0;
+        
+        // حساب الحسبة ثم تقريبها لأقرب عدد صحيح
+        const result = (q * p) + old - paid;
+        document.getElementById('remain').value = Math.round(result);
+    }
+
+    function saveData() {
+        const name = document.getElementById('name').value.trim();
+        const type = document.getElementById('opType').value;
+        const remainVal = parseFloat(document.getElementById('remain').value);
+        if (!name) return alert("يرجى إدخال الاسم");
+        if (remainVal < 0) return alert("خطأ: المبلغ المدفوع يتجاوز المستحق!");
+
+        let finalTypeLabel = "";
+        if (type === "طبعة") {
+            const batchNum = document.getElementById('batch').value || 0;
+            finalTypeLabel = `طبعة (${batchNum})`;
+        } else {
+            const userPayments = localDB.filter(r => r.name === name && r.type.includes("دفعة")).length;
+            finalTypeLabel = `دفعة ${userPayments + 1}`;
+        }
+
+        const data = {
+            name: name,
+            type: finalTypeLabel,
+            date: document.getElementById('opDate').value,
+            batch: document.getElementById('batch').value || 0,
+            qty: document.getElementById('qty').value, // هنا يحفظ الكسر
+            price: document.getElementById('price').value,
+            old: Math.round(document.getElementById('oldDebt').value),
+            paid: Math.round(document.getElementById('paid').value),
+            remain: Math.round(document.getElementById('remain').value), // هنا يحفظ عدد صحيح
+            ts: Date.now()
+        };
+
+        if (editingId) {
+            database.child(editingId).update(data).then(() => { alert("تم التعديل ✅"); resetForm(); });
+        } else {
+            database.push(data).then(() => { alert("تم الحفظ ✅"); resetForm(); });
+        }
+    }
+
+    function resetForm() {
+        editingId = null;
+        document.getElementById('submitBtn').innerText = "💾 حفظ العملية";
+        document.getElementById('paid').value = 0;
+        document.getElementById('qty').value = 0;
+        document.getElementById('opDate').valueAsDate = new Date();
+        fetchUserLastData();
+    }
+
+    function editItem(id) {
+        const item = localDB.find(r => r.id === id);
+        editingId = id;
+        document.getElementById('name').value = item.name;
+        document.getElementById('opType').value = item.type.includes("طبعة") ? "طبعة" : "دفعة";
+        document.getElementById('opDate').value = item.date;
+        document.getElementById('batch').value = item.batch;
+        document.getElementById('qty').value = item.qty;
+        document.getElementById('price').value = item.price;
+        document.getElementById('oldDebt').value = item.old;
+        document.getElementById('paid').value = item.paid;
+        toggleUI();
+    }
+
+    function deleteItem(id) {
+        if (confirm("حذف العملية؟")) database.child(id).remove();
+    }
+
+    function refreshUI() {
+        const tbody = document.getElementById('mainTableBody');
+        tbody.innerHTML = '';
+        const namesList = document.getElementById('namesList');
+        const uniqueNames = [...new Set(localDB.map(r => r.name))];
+        namesList.innerHTML = uniqueNames.map(n => `<option value="${n}">`).join('');
+
+        let sortedData = [...localDB].sort((a, b) => b.ts - a.ts);
+        let groupedData = [];
+        let processedIds = new Set();
+
+        sortedData.forEach(item => {
+            if (item.type.includes("طبعة") && !processedIds.has(item.id)) {
+                groupedData.push(item);
+                processedIds.add(item.id);
+                let relatedPayments = sortedData.filter(p => p.name === item.name && p.type.includes("دفعة") && !processedIds.has(p.id) && p.ts > item.ts - (1000 * 60 * 60 * 24 * 30)).sort((a, b) => a.ts - b.ts);
+                relatedPayments.forEach(pay => { groupedData.push(pay); processedIds.add(pay.id); });
+            }
+        });
+        sortedData.forEach(item => { if (!processedIds.has(item.id)) groupedData.push(item); });
+
+        groupedData.forEach(item => {
+            const isBatch = item.type.includes("طبعة");
+            tbody.innerHTML += `
+                <tr class="${isBatch ? 'row-batch' : 'row-payment'}">
+                    <td style="font-weight:bold;">${item.name}</td>
+                    <td>${item.date}</td>
+                    <td class="${isBatch ? '' : 'payment-indent'}">${isBatch ? item.type : '↳ ' + item.type}</td>
+                    <td>${item.qty}</td>
+                    <td>${Math.round(item.old)}</td>
+                    <td style="color:green; font-weight:bold;">${Math.round(item.paid || 0)}</td>
+                    <td style="color:red; font-weight:bold;">${Math.round(item.remain)}</td>
+                    <td class="actions-btns">
+                        <button class="btn-action btn-edit" onclick="editItem('${item.id}')">✏️</button>
+                        <button class="btn-action btn-del" onclick="deleteItem('${item.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+        });
+    }
+</script>
+</body>
+</html>
