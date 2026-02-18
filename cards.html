@@ -7,56 +7,98 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #2563eb; --success: #22c55e; --danger: #ef4444; --warning: #f59e0b; --background: #f8fafc; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--background); direction: rtl; padding: 20px; margin: 0; }
-        .container { max-width: 1100px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .f-group { display: flex; flex-direction: column; }
-        label { font-weight: bold; font-size: 0.85rem; margin-bottom: 5px; color: #475569; }
-        input, select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; outline: none; }
-        input:focus { border-color: var(--primary); }
-        .btn-save { width: 100%; padding: 15px; background: var(--success); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1.1rem; }
-        .hidden { display: none !important; }
-        .actions-btns { display: flex; gap: 5px; justify-content: center; }
-        .btn-action { border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; color: white; }
-        .btn-edit { background: var(--warning); }
-        .btn-del { background: var(--danger); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 12px; text-align: center; border-bottom: 1px solid #e2e8f0; }
-        th { background: #f1f5f9; position: sticky; top: 0; }
-        .balance-card { background: #eff6ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 25px; }
-        .row-batch { background-color: #f0fdf4; font-weight: bold; }
-        .error-hint { color: var(--danger); font-size: 0.8rem; font-weight: bold; margin-top: 5px; display: none; }
-        
-        /* تصميم صندوق الفلترة */
-        .filter-section {
-            background: #fffbeb;
-            border: 2px dashed #f59e0b;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
+        :root { 
+            --main-gradient: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
+            --success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --danger-gradient: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); 
+            --bg-color: #f1f5f9;
         }
-        .filter-section h4 { margin: 0; color: #92400e; }
-        .filter-input { flex-grow: 1; border: 2px solid #f59e0b; }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-color); 
+            background-image: radial-gradient(#cbd5e1 0.8px, transparent 0.8px);
+            background-size: 24px 24px;
+            direction: rtl; padding: 20px; margin: 0; color: #1e293b;
+        }
+
+        .container { 
+            max-width: 1200px; margin: auto; background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; border-radius: 24px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(8px); border: 1px solid #fff;
+        }
+
+        h2 { text-align: center; color: #4338ca; font-weight: 800; margin-bottom: 25px; }
+
+        .balance-card { 
+            background: var(--main-gradient); color: white; padding: 25px; 
+            border-radius: 20px; text-align: center; margin-bottom: 30px; 
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+        
+        #displayBal { font-size: 3.2rem; font-weight: 900; line-height: 1; margin-top: 10px; }
+
+        .grid-form { 
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 15px; margin-bottom: 30px; background: #fff; padding: 25px;
+            border-radius: 20px; border: 1px solid #f1f5f9;
+        }
+
+        .f-group { display: flex; flex-direction: column; gap: 8px; }
+        .f-group label { font-size: 0.85rem; font-weight: 700; color: #64748b; }
+        
+        input, select { 
+            padding: 12px 15px; border: 2px solid #f1f5f9; border-radius: 12px; 
+            font-size: 0.95rem; transition: all 0.3s; background: #f8fafc;
+            width: 100%; box-sizing: border-box;
+        }
+        
+        input:focus { border-color: #6366f1; background: white; outline: none; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+
+        .btn-save { 
+            width: 100%; padding: 18px; background: var(--success-gradient);
+            color: white; border: none; border-radius: 16px; font-weight: 800; 
+            cursor: pointer; font-size: 1.1rem; transition: all 0.3s;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.25);
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        
+        .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35); }
+
+        .filter-section {
+            margin: 35px 0 20px 0; display: flex; align-items: center; gap: 15px;
+            background: #fefce8; padding: 15px 20px; border-radius: 15px; border: 1px solid #fef08a;
+        }
+        
+        .table-wrapper { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .scrollable-table { overflow-x: auto; max-height: 550px; }
+        
+        table { width: 100%; border-collapse: collapse; min-width: 950px; }
+        th { background: #f8fafc; padding: 18px; color: #475569; position: sticky; top: 0; z-index: 10; border-bottom: 2px solid #f1f5f9; }
+        td { padding: 15px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+        
+        .row-batch { background-color: #f0fdf4 !important; }
+        .hidden { display: none !important; }
+
+        .btn-action { border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
+        .btn-edit { background: #fef3c7; color: #d97706; }
+        .btn-del { background: #fee2e2; color: #dc2626; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="text-align:center; color: var(--primary);">نظام ادارة مبيعات الفروخ</h2>
+    <h2>نظام إدارة مبيعات الفروخ</h2>
 
     <div class="balance-card">
-        <label>الدين الحالي على الموزع</label>
-        <div id="displayBal" style="font-size: 2.2rem; font-weight: 900; color: var(--danger);">0</div>
+        <label style="opacity: 0.9;">الدين الحالي المطلوب</label>
+        <div id="displayBal">0</div>
     </div>
 
     <div class="grid-form">
         <div class="f-group">
             <label>اسم الموزع</label>
-            <input type="text" id="name" list="namesList" placeholder="اسم الموزع..." oninput="fetchUserLastData()">
+            <input type="text" id="name" list="namesList" placeholder="🔍 ابحث..." oninput="fetchUserLastData()">
             <datalist id="namesList"></datalist>
         </div>
 
@@ -68,57 +110,63 @@
             </select>
         </div>
 
+        <div class="f-group batch-only">
+            <label>نوع الفرخ</label>
+            <select id="chickenType">
+                <option value="8 ساعات">8 ساعات</option>
+                <option value="10 ساعات">10 ساعات</option>
+                <option value="24 ساعة">24 ساعة</option>
+            </select>
+        </div>
+
         <div class="f-group"><label>التاريخ</label><input type="date" id="opDate"></div>
         <div class="f-group batch-only"><label>رقم الطبعة</label><input type="number" id="batch" value="0"></div>
-        <div class="f-group batch-only"><label>عدد الفروخ</label><input type="number" id="qty" oninput="runCalc()" value="0" step="0.5"></div>
-        <div class="f-group batch-only"><label>سعر الفرخ</label><input type="number" id="price" oninput="runCalc()" value="90"></div>
-        
+        <div class="f-group batch-only"><label>العدد</label><input type="number" id="qty" oninput="runCalc()" value="0" step="0.5"></div>
+        <div class="f-group batch-only"><label>السعر</label><input type="number" id="price" oninput="runCalc()" value="90"></div>
         <div class="f-group"><label>دين سابق</label><input type="number" id="oldDebt" oninput="runCalc()" value="0"></div>
         
         <div class="f-group pay-only hidden">
-            <label>المبلغ المدفوع</label>
+            <label>مدفوع</label>
             <input type="number" id="paid" oninput="runCalc()" value="0">
-            <span id="negAlert" class="error-hint">⚠️ تنبيه: المبلغ المدفوع أكبر من الدين!</span>
         </div>
         
         <div class="f-group">
             <label>صافي الدين الجديد</label>
-            <input type="number" id="remain" readonly style="background:#fff1f2; font-weight:bold; color:#be123c;">
+            <input type="number" id="remain" readonly style="background:#fff1f2; color:#be123c; font-weight: 900;">
         </div>
     </div>
 
-    <button id="submitBtn" class="btn-save" onclick="saveData()">💾 حفظ العملية</button>
-    <button id="cancelEdit" class="hidden" onclick="resetForm()" style="margin-top:10px; width:100%; padding:10px; background:#64748b; color:white; border:none; border-radius:10px; cursor:pointer;">إلغاء التعديل</button>
-
-    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #e2e8f0;">
+    <button id="submitBtn" class="btn-save" onclick="saveData()">💾 حفظ وإرسال</button>
+    <button id="cancelEdit" class="hidden" onclick="resetForm()" style="margin-top:10px; width:100%; padding:15px; background:#94a3b8; color:white; border:none; border-radius:12px; cursor:pointer;">إلغاء التعديل</button>
 
     <div class="filter-section">
-        <h4>🔍 كشف حساب موزع:</h4>
-        <input type="text" id="filterName" list="namesList" class="filter-input" placeholder="اكتب اسم الموزع لفلترة نتائجه..." oninput="refreshUI()">
-        <button onclick="document.getElementById('filterName').value=''; refreshUI()" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; cursor: pointer;">عرض الكل</button>
+        <h4 style="margin:0;">🔍 بحث في الحساب:</h4>
+        <input type="text" id="filterName" list="namesList" class="filter-input" style="flex:1" placeholder="اكتب اسم الموزع..." oninput="refreshUI()">
     </div>
 
-    <div style="overflow-x:auto; max-height: 500px;">
-        <table>
-            <thead>
-                <tr>
-                    <th>الموزع</th>
-                    <th>التاريخ</th>
-                    <th>البيان</th>
-                    <th>عدد</th>
-                    <th>سابق</th>
-                    <th>مدفوع</th>
-                    <th>الرصيد</th>
-                    <th>إجراءات</th>
-                </tr>
-            </thead>
-            <tbody id="mainTableBody"></tbody>
-        </table>
+    <div class="table-wrapper">
+        <div class="scrollable-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الموزع</th>
+                        <th>التاريخ</th>
+                        <th>البيان</th>
+                        <th>النوع</th>
+                        <th>العدد</th>
+                        <th>سابق</th> <th>مدفوع</th>
+                        <th>الرصيد</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="mainTableBody"></tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    // تهيئة Firebase (بياناتك الأصلية)
+    // بيانات Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
         authDomain: "cards-8397e.firebaseapp.com",
@@ -164,7 +212,7 @@
         const userRecords = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
         const lastBal = userRecords.length > 0 ? parseFloat(userRecords[0].remain) : 0;
         document.getElementById('oldDebt').value = Math.round(lastBal);
-        document.getElementById('displayBal').innerText = Math.round(lastBal);
+        document.getElementById('displayBal').innerText = Math.round(lastBal).toLocaleString();
         runCalc();
     }
 
@@ -175,14 +223,6 @@
         const paid = parseFloat(document.getElementById('paid').value) || 0;
         const result = (q * p) + old - paid;
         document.getElementById('remain').value = Math.round(result);
-        const negAlert = document.getElementById('negAlert');
-        if (result < 0) {
-            negAlert.style.display = 'block';
-            document.getElementById('remain').style.color = 'orange';
-        } else {
-            negAlert.style.display = 'none';
-            document.getElementById('remain').style.color = '#be123c';
-        }
     }
 
     function saveData() {
@@ -190,24 +230,22 @@
         const type = document.getElementById('opType').value;
         const remainVal = parseFloat(document.getElementById('remain').value);
         if (!name) return alert("يرجى إدخال اسم الموزع");
-        if (remainVal < 0) {
-            const currentDebt = (parseFloat(document.getElementById('qty').value) * parseFloat(document.getElementById('price').value)) + 
-                                parseFloat(document.getElementById('oldDebt').value);
-            return alert(`🛑 خطأ محاسبي: لا يمكن قبض مبلغ (${document.getElementById('paid').value}) لأن إجمالي الدين المطلوب هو (${currentDebt}) فقط.`);
-        }
-
+        
         let finalTypeLabel = "";
+        let cType = "";
         if (type === "طبعة") {
-            const batchNum = document.getElementById('batch').value || 0;
-            finalTypeLabel = `طبعة (${batchNum})`;
+            finalTypeLabel = `طبعة (${document.getElementById('batch').value || 0})`;
+            cType = document.getElementById('chickenType').value;
         } else {
             const userPayments = localDB.filter(r => r.name === name && r.type.includes("دفعة")).length;
             finalTypeLabel = `دفعة ${userPayments + 1}`;
+            cType = "-";
         }
 
         const data = {
             name: name,
             type: finalTypeLabel,
+            chickenType: cType,
             date: document.getElementById('opDate').value,
             batch: document.getElementById('batch').value || 0,
             qty: document.getElementById('qty').value,
@@ -219,7 +257,7 @@
         };
 
         if (editingId) {
-            database.child(editingId).update(data).then(() => { alert("تم التعديل ✅"); resetForm(); });
+            database.child(editingId).update(data).then(() => { alert("تم التعديل بنجاح ✅"); resetForm(); });
         } else {
             database.push(data).then(() => { alert("تم الحفظ بنجاح ✅"); resetForm(); });
         }
@@ -227,7 +265,7 @@
 
     function resetForm() {
         editingId = null;
-        document.getElementById('submitBtn').innerText = "💾 حفظ العملية";
+        document.getElementById('submitBtn').innerText = "💾 حفظ وإرسال";
         document.getElementById('cancelEdit').classList.add('hidden');
         document.getElementById('paid').value = 0;
         document.getElementById('qty').value = 0;
@@ -243,16 +281,17 @@
         editingId = id;
         document.getElementById('name').value = item.name;
         document.getElementById('opType').value = item.type.includes("طبعة") ? "طبعة" : "دفعة";
+        if(item.chickenType && item.chickenType !== "-") document.getElementById('chickenType').value = item.chickenType;
         document.getElementById('opDate').value = item.date;
         document.getElementById('batch').value = item.batch;
         document.getElementById('qty').value = item.qty;
         document.getElementById('price').value = item.price;
         document.getElementById('oldDebt').value = item.old;
         document.getElementById('paid').value = item.paid;
-        document.getElementById('submitBtn').innerText = "🆙 تحديث السجل";
+        document.getElementById('submitBtn').innerText = "🆙 تحديث";
         document.getElementById('cancelEdit').classList.remove('hidden');
         toggleUI();
-        window.scrollTo(0,0);
+        window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function deleteItem(id) {
@@ -268,29 +307,21 @@
     function refreshUI() {
         const tbody = document.getElementById('mainTableBody');
         tbody.innerHTML = '';
-        
-        // الحصول على قيمة الفلترة
-        const filterValue = document.getElementById('filterName').value.trim();
+        const filter = document.getElementById('filterName').value.trim();
+        let displayData = filter ? localDB.filter(r => r.name.includes(filter)) : localDB;
 
-        // تصفية البيانات بناءً على الاسم إذا كان الحقل ليس فارغاً
-        let displayData = localDB;
-        if (filterValue !== "") {
-            displayData = localDB.filter(r => r.name.includes(filterValue));
-        }
-
-        // ترتيب من الأحدث للأقدم وعرض البيانات
         displayData.sort((a,b) => b.ts - a.ts).forEach(item => {
             const isBatch = item.type.includes("طبعة");
             tbody.innerHTML += `
-                <tr class="${isBatch ? 'row-batch' : 'row-payment'}">
-                    <td>${item.name}</td>
+                <tr class="${isBatch ? 'row-batch' : ''}">
+                    <td style="font-weight:bold">${item.name}</td>
                     <td>${item.date}</td>
-                    <td>${item.type}</td>
+                    <td><span style="background:${isBatch?'#dcfce7':'#fef3c7'}; padding:4px 10px; border-radius:8px; font-size:0.8rem;">${item.type}</span></td>
+                    <td style="font-weight:bold; color:#4f46e5;">${item.chickenType || '-'}</td>
                     <td>${item.qty}</td>
-                    <td>${item.old}</td>
-                    <td style="color:green;">${item.paid || 0}</td>
-                    <td style="color:red; font-weight:bold;">${item.remain}</td>
-                    <td class="actions-btns">
+                    <td style="color:#64748b;">${item.old}</td> <td style="color:#059669; font-weight:bold;">${item.paid || 0}</td>
+                    <td style="color:#e11d48; font-weight:bold;">${item.remain}</td>
+                    <td>
                         <button class="btn-action btn-edit" onclick="editItem('${item.id}')">✏️</button>
                         <button class="btn-action btn-del" onclick="deleteItem('${item.id}')">🗑️</button>
                     </td>
