@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام ادارة مبيعات الفروخ - كشف حساب</title>
+    <title>نظام إدارة مبيعات الفروخ</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
@@ -64,6 +64,9 @@
         }
         
         .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35); }
+        .btn-save:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .error-msg { color: #e11d48; font-size: 0.75rem; font-weight: bold; margin-top: 4px; display: none; }
 
         .filter-section {
             margin: 35px 0 20px 0; display: flex; align-items: center; gap: 15px;
@@ -123,11 +126,17 @@
         <div class="f-group batch-only"><label>رقم الطبعة</label><input type="number" id="batch" value="0"></div>
         <div class="f-group batch-only"><label>العدد</label><input type="number" id="qty" oninput="runCalc()" value="0" step="0.5"></div>
         <div class="f-group batch-only"><label>السعر</label><input type="number" id="price" oninput="runCalc()" value="90"></div>
-        <div class="f-group"><label>دين سابق</label><input type="number" id="oldDebt" oninput="runCalc()" value="0"></div>
+        
+        <div class="f-group">
+            <label>دين سابق</label>
+            <input type="number" id="oldDebt" oninput="runCalc()" value="0" readonly style="background:#f1f5f9;">
+            <span id="noDebtHint" class="error-msg">⚠️ لا توجد مستحقات مالية على هذا الموزع حالياً</span>
+        </div>
         
         <div class="f-group pay-only hidden">
             <label>مدفوع</label>
             <input type="number" id="paid" oninput="runCalc()" value="0">
+            <span id="payLimitHint" class="error-msg">⚠️ المبلغ المدفوع أكبر من الدين المطلوب!</span>
         </div>
         
         <div class="f-group">
@@ -166,7 +175,6 @@
 </div>
 
 <script>
-    // بيانات Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
         authDomain: "cards-8397e.firebaseapp.com",
@@ -202,6 +210,7 @@
         } else {
             batchFields.forEach(el => el.classList.remove('hidden'));
             payFields.forEach(el => el.classList.add('hidden'));
+            document.getElementById('noDebtHint').style.display = 'none';
         }
         runCalc();
     }
@@ -217,20 +226,57 @@
     }
 
     function runCalc() {
+        const type = document.getElementById('opType').value;
         const q = parseFloat(document.getElementById('qty').value) || 0;
         const p = parseFloat(document.getElementById('price').value) || 0;
         const old = parseFloat(document.getElementById('oldDebt').value) || 0;
         const paid = parseFloat(document.getElementById('paid').value) || 0;
-        const result = (q * p) + old - paid;
+        
+        const currentTotal = (q * p) + old;
+        const result = currentTotal - paid;
         document.getElementById('remain').value = Math.round(result);
+
+        const submitBtn = document.getElementById('submitBtn');
+        const payLimitHint = document.getElementById('payLimitHint');
+        const noDebtHint = document.getElementById('noDebtHint');
+
+        // منطق الحماية المالية
+        if (type === 'دفعة') {
+            if (old <= 0) {
+                noDebtHint.style.display = 'block';
+                payLimitHint.style.display = 'none';
+                submitBtn.disabled = true;
+                document.getElementById('paid').value = 0;
+            } else if (paid > old) {
+                payLimitHint.style.display = 'block';
+                noDebtHint.style.display = 'none';
+                submitBtn.disabled = true;
+            } else {
+                payLimitHint.style.display = 'none';
+                noDebtHint.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        } else {
+            submitBtn.disabled = false;
+            payLimitHint.style.display = 'none';
+            noDebtHint.style.display = 'none';
+        }
     }
 
     function saveData() {
         const name = document.getElementById('name').value.trim();
         const type = document.getElementById('opType').value;
         const remainVal = parseFloat(document.getElementById('remain').value);
+        const oldVal = parseFloat(document.getElementById('oldDebt').value) || 0;
+        const paidVal = parseFloat(document.getElementById('paid').value) || 0;
+
         if (!name) return alert("يرجى إدخال اسم الموزع");
         
+        // تأكيد حماية نهائي قبل الحفظ
+        if (type === 'دفعة' && paidVal > oldVal) {
+            return alert("لا يمكن دفع مبلغ أكبر من الدين!");
+        }
+
         let finalTypeLabel = "";
         let cType = "";
         if (type === "طبعة") {
@@ -250,8 +296,8 @@
             batch: document.getElementById('batch').value || 0,
             qty: document.getElementById('qty').value,
             price: document.getElementById('price').value,
-            old: Math.round(parseFloat(document.getElementById('oldDebt').value)),
-            paid: Math.round(parseFloat(document.getElementById('paid').value)),
+            old: Math.round(oldVal),
+            paid: Math.round(paidVal),
             remain: Math.round(remainVal),
             ts: Date.now()
         };
@@ -266,6 +312,7 @@
     function resetForm() {
         editingId = null;
         document.getElementById('submitBtn').innerText = "💾 حفظ وإرسال";
+        document.getElementById('submitBtn').disabled = false;
         document.getElementById('cancelEdit').classList.add('hidden');
         document.getElementById('paid').value = 0;
         document.getElementById('qty').value = 0;
@@ -274,6 +321,8 @@
         document.getElementById('remain').value = 0;
         document.getElementById('displayBal').innerText = 0;
         document.getElementById('opDate').valueAsDate = new Date();
+        document.getElementById('payLimitHint').style.display = 'none';
+        document.getElementById('noDebtHint').style.display = 'none';
     }
 
     function editItem(id) {
