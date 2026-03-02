@@ -30,13 +30,41 @@
 
         h2 { text-align: center; color: #4338ca; font-weight: 800; margin-bottom: 25px; }
 
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
         .balance-card { 
             background: var(--main-gradient); color: white; padding: 25px; 
-            border-radius: 20px; text-align: center; margin-bottom: 30px; 
+            border-radius: 20px; text-align: center;
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+            display: flex; flex-direction: column; justify-content: center;
+        }
+
+        .total-network-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: white; padding: 20px; border-radius: 20px; text-align: center;
+            box-shadow: 0 10px 15px -3px rgba(30, 41, 59, 0.3);
+            display: flex; flex-direction: column; gap: 10px;
         }
         
-        #displayBal { font-size: 3.2rem; font-weight: 900; line-height: 1; margin-top: 10px; }
+        #displayBal, #displayTotalNetwork { font-size: 2.8rem; font-weight: 900; line-height: 1; }
+        #displayTotalNetwork { color: #fbbf24; }
+
+        /* ستايل قائمة استثناء الموزعين داخل البطاقة */
+        .exclude-list {
+            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            margin-top: 5px; padding: 10px; background: rgba(255,255,255,0.1); 
+            border-radius: 12px; max-height: 100px; overflow-y: auto;
+        }
+        .exclude-item { 
+            font-size: 0.75rem; display: flex; align-items: center; gap: 4px; 
+            background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; cursor: pointer; 
+        }
+        .exclude-item input { width: auto; height: auto; margin: 0; cursor: pointer; }
 
         .grid-form { 
             display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
@@ -86,6 +114,10 @@
         .btn-action { border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; transition: 0.2s; }
         .btn-edit { background: #fef3c7; color: #d97706; }
         .btn-del { background: #fee2e2; color: #dc2626; }
+
+        @media (max-width: 768px) {
+            .stats-container { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -93,9 +125,17 @@
 <div class="container">
     <h2>نظام إدارة مبيعات الفروخ</h2>
 
-    <div class="balance-card">
-        <label style="opacity: 0.9;">الدين الحالي المطلوب</label>
-        <div id="displayBal">0</div>
+    <div class="stats-container">
+        <div class="balance-card">
+            <label style="opacity: 0.9; margin-bottom: 10px;">الدين الحالي (للموزع المحدد)</label>
+            <div id="displayBal">0</div>
+        </div>
+
+        <div class="total-network-card">
+            <label style="opacity: 0.9;">إجمالي ديون الشبكة</label>
+            <div id="displayTotalNetwork">0</div>
+            <div id="excludeCheckboxes" class="exclude-list"></div>
+        </div>
     </div>
 
     <div class="grid-form">
@@ -197,7 +237,40 @@
         localDB = val ? Object.entries(val).map(([id, data]) => ({id, ...data})) : [];
         refreshUI();
         updateDatalist();
+        updateExcludeList();
+        calculateNetworkTotal();
     });
+
+    function updateExcludeList() {
+        const container = document.getElementById('excludeCheckboxes');
+        const uniqueNames = [...new Set(localDB.map(r => r.name))];
+        const currentChecked = Array.from(container.querySelectorAll('input:checked')).map(i => i.value);
+        const isFirstLoad = container.innerHTML === "";
+
+        container.innerHTML = uniqueNames.map(name => {
+            const isChecked = isFirstLoad || currentChecked.includes(name);
+            return `
+                <label class="exclude-item">
+                    <input type="checkbox" value="${name}" ${isChecked ? 'checked' : ''} onchange="calculateNetworkTotal()">
+                    ${name}
+                </label>
+            `;
+        }).join('');
+    }
+
+    function calculateNetworkTotal() {
+        const selectedNames = Array.from(document.querySelectorAll('#excludeCheckboxes input:checked')).map(i => i.value);
+        let totalNetworkDebt = 0;
+
+        selectedNames.forEach(name => {
+            const userRecords = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
+            if (userRecords.length > 0) {
+                totalNetworkDebt += parseFloat(userRecords[0].remain || 0);
+            }
+        });
+
+        document.getElementById('displayTotalNetwork').innerText = Math.round(totalNetworkDebt).toLocaleString() + " ₪";
+    }
 
     function toggleUI() {
         const type = document.getElementById('opType').value;
@@ -240,7 +313,6 @@
         const payLimitHint = document.getElementById('payLimitHint');
         const noDebtHint = document.getElementById('noDebtHint');
 
-        // منطق الحماية المالية
         if (type === 'دفعة') {
             if (old <= 0) {
                 noDebtHint.style.display = 'block';
@@ -272,7 +344,6 @@
 
         if (!name) return alert("يرجى إدخال اسم الموزع");
         
-        // تأكيد حماية نهائي قبل الحفظ
         if (type === 'دفعة' && paidVal > oldVal) {
             return alert("لا يمكن دفع مبلغ أكبر من الدين!");
         }
