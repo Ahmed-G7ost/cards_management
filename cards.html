@@ -6,6 +6,12 @@
     <title>نظام إدارة مبيعات الفروخ</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <style>
         :root { 
             --main-gradient: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
@@ -54,7 +60,6 @@
         #displayBal, #displayTotalNetwork { font-size: 2.8rem; font-weight: 900; line-height: 1; }
         #displayTotalNetwork { color: #fbbf24; }
 
-        /* ستايل قائمة استثناء الموزعين داخل البطاقة */
         .exclude-list {
             display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
             margin-top: 5px; padding: 10px; background: rgba(255,255,255,0.1); 
@@ -65,6 +70,17 @@
             background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px; cursor: pointer; 
         }
         .exclude-item input { width: auto; height: auto; margin: 0; cursor: pointer; }
+
+        .analysis-section {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 25px;
+        }
+        .analysis-card {
+            background: #fff; padding: 15px; border-radius: 15px; border: 1px solid #e2e8f0;
+            text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .analysis-card small { color: #64748b; font-weight: bold; }
+        .analysis-card div { color: #4338ca; font-weight: 800; font-size: 1.1rem; margin-top: 5px; }
 
         .grid-form { 
             display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
@@ -92,14 +108,17 @@
         }
         
         .btn-save:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35); }
-        .btn-save:disabled { background: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-save:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; transform: none; }
 
-        .error-msg { color: #e11d48; font-size: 0.75rem; font-weight: bold; margin-top: 4px; display: none; }
+        .delay-warning { background-color: #fff1f2 !important; border-right: 5px solid #e11d48; }
 
-        .filter-section {
-            margin: 35px 0 20px 0; display: flex; align-items: center; gap: 15px;
-            background: #fefce8; padding: 15px 20px; border-radius: 15px; border: 1px solid #fef08a;
+        .export-btns { display: flex; gap: 10px; margin-bottom: 15px; }
+        .btn-export { 
+            padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; 
+            font-size: 0.9rem; font-weight: bold; display: flex; align-items: center; gap: 8px;
+            transition: 0.3s;
         }
+        .btn-export:hover { opacity: 0.9; transform: scale(1.02); }
         
         .table-wrapper { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
         .scrollable-table { overflow-x: auto; max-height: 550px; }
@@ -127,26 +146,42 @@
 
     <div class="stats-container">
         <div class="balance-card">
-            <label style="opacity: 0.9; margin-bottom: 10px;">الدين الحالي (للموزع المحدد)</label>
+            <label style="opacity: 0.9; margin-bottom: 10px;">📊 الدين الحالي (للموزع)</label>
             <div id="displayBal">0</div>
         </div>
 
         <div class="total-network-card">
-            <label style="opacity: 0.9;">إجمالي ديون الشبكة</label>
+            <label style="opacity: 0.9;">🌐 إجمالي ديون الشبكة</label>
             <div id="displayTotalNetwork">0</div>
             <div id="excludeCheckboxes" class="exclude-list"></div>
         </div>
     </div>
 
+    <div class="analysis-section">
+        <div class="analysis-card">
+            <small>🥇 الأكثر سحباً (كمية)</small>
+            <div id="topBuyer">-</div>
+        </div>
+        <div class="analysis-card">
+            <small>💳 الأكثر تسديداً (مبلغ)</small>
+            <div id="topPayer">-</div>
+        </div>
+        <div class="analysis-card">
+            <small>⌛ موزعين متأخرين (>7 أيام)</small>
+            <div id="delayedCount">0</div>
+            <div id="delayedNames" style="font-size: 0.7rem; color: #e11d48; margin-top: 5px; font-weight: bold;">-</div>
+        </div>
+    </div>
+
     <div class="grid-form">
         <div class="f-group">
-            <label>اسم الموزع</label>
+            <label>👤 اسم الموزع</label>
             <input type="text" id="name" list="namesList" placeholder="🔍 ابحث..." oninput="fetchUserLastData()">
             <datalist id="namesList"></datalist>
         </div>
 
         <div class="f-group">
-            <label>نوع العملية</label>
+            <label>⚙️ نوع العملية</label>
             <select id="opType" onchange="toggleUI()">
                 <option value="طبعة">📦 استلام فروخ</option>
                 <option value="دفعة">💰 تسديد دفعة</option>
@@ -154,7 +189,7 @@
         </div>
 
         <div class="f-group batch-only">
-            <label>نوع الفرخ</label>
+            <label>🐣 نوع الفرخ</label>
             <select id="chickenType">
                 <option value="8 ساعات">8 ساعات</option>
                 <option value="10 ساعات">10 ساعات</option>
@@ -162,35 +197,40 @@
             </select>
         </div>
 
-        <div class="f-group"><label>التاريخ</label><input type="date" id="opDate"></div>
-        <div class="f-group batch-only"><label>رقم الطبعة</label><input type="number" id="batch" value="0"></div>
-        <div class="f-group batch-only"><label>العدد</label><input type="number" id="qty" oninput="runCalc()" value="0" step="0.5"></div>
-        <div class="f-group batch-only"><label>السعر</label><input type="number" id="price" oninput="runCalc()" value="90"></div>
+        <div class="f-group"><label>📅 التاريخ</label><input type="date" id="opDate"></div>
+        <div class="f-group batch-only"><label>🔢 رقم الطبعة</label><input type="number" id="batch" value="0"></div>
+        <div class="f-group batch-only"><label>📉 العدد</label><input type="number" id="qty" oninput="runCalc()" value="0" step="0.5"></div>
+        <div class="f-group batch-only"><label>💵 السعر</label><input type="number" id="price" oninput="runCalc()" value="90"></div>
         
         <div class="f-group">
-            <label>دين سابق</label>
+            <label>📝 دين سابق</label>
             <input type="number" id="oldDebt" oninput="runCalc()" value="0" readonly style="background:#f1f5f9;">
-            <span id="noDebtHint" class="error-msg">⚠️ لا توجد مستحقات مالية على هذا الموزع حالياً</span>
+            <span id="noDebtHint" style="color: #e11d48; font-size: 0.75rem; font-weight: bold; margin-top: 4px; display: none;">⚠️ لا توجد مستحقات</span>
         </div>
         
         <div class="f-group pay-only hidden">
-            <label>مدفوع</label>
+            <label>💸 مدفوع</label>
             <input type="number" id="paid" oninput="runCalc()" value="0">
-            <span id="payLimitHint" class="error-msg">⚠️ المبلغ المدفوع أكبر من الدين المطلوب!</span>
+            <span id="payLimitHint" style="color: #e11d48; font-size: 0.75rem; font-weight: bold; margin-top: 4px; display: none;">⚠️ المبلغ المدفوع أكبر من الدين المطلوب!</span>
         </div>
         
         <div class="f-group">
-            <label>صافي الدين الجديد</label>
+            <label>🚩 صافي الدين الجديد</label>
             <input type="number" id="remain" readonly style="background:#fff1f2; color:#be123c; font-weight: 900;">
         </div>
     </div>
 
-    <button id="submitBtn" class="btn-save" onclick="saveData()">💾 حفظ وإرسال</button>
+    <button id="submitBtn" class="btn-save" onclick="saveData()">💾 حفظ البيانات وإرسال</button>
     <button id="cancelEdit" class="hidden" onclick="resetForm()" style="margin-top:10px; width:100%; padding:15px; background:#94a3b8; color:white; border:none; border-radius:12px; cursor:pointer;">إلغاء التعديل</button>
 
     <div class="filter-section">
-        <h4 style="margin:0;">🔍 بحث في الحساب:</h4>
-        <input type="text" id="filterName" list="namesList" class="filter-input" style="flex:1" placeholder="اكتب اسم الموزع..." oninput="refreshUI()">
+        <h4 style="margin:0;">🔍 بحث سريع:</h4>
+        <input type="text" id="filterName" list="namesList" style="flex:1" placeholder="اكتب اسم الموزع للبحث أو التصدير..." oninput="refreshUI()">
+    </div>
+
+    <div class="export-btns">
+        <button class="btn-export" style="background:#059669; color:white;" onclick="exportToExcel()">Excel 📊</button>
+        <button class="btn-export" style="background:#dc2626; color:white;" onclick="exportToPDF()">تصدير PDF 📄</button>
     </div>
 
     <div class="table-wrapper">
@@ -239,37 +279,125 @@
         updateDatalist();
         updateExcludeList();
         calculateNetworkTotal();
+        runAnalysis();
     });
+
+    function runAnalysis() {
+        if (localDB.length === 0) return;
+        const names = [...new Set(localDB.map(r => r.name))];
+        let buyers = {}, payers = {}, delayedCount = 0, delayedNamesArr = [];
+        const now = Date.now();
+        const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+
+        names.forEach(name => {
+            const records = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
+            buyers[name] = records.reduce((sum, r) => sum + (parseFloat(r.qty) || 0), 0);
+            payers[name] = records.reduce((sum, r) => sum + (parseFloat(r.paid) || 0), 0);
+            if (records.length > 0 && records[0].remain > 0 && (now - records[0].ts > sevenDaysMs)) {
+                delayedCount++;
+                delayedNamesArr.push(name);
+            }
+        });
+
+        document.getElementById('topBuyer').innerText = Object.keys(buyers).reduce((a, b) => buyers[a] > buyers[b] ? a : b) || "-";
+        document.getElementById('topPayer').innerText = Object.keys(payers).reduce((a, b) => payers[a] > payers[b] ? a : b) || "-";
+        document.getElementById('delayedCount').innerText = delayedCount;
+        document.getElementById('delayedNames').innerText = delayedNamesArr.length > 0 ? delayedNamesArr.join(' - ') : "-";
+    }
 
     function updateExcludeList() {
         const container = document.getElementById('excludeCheckboxes');
         const uniqueNames = [...new Set(localDB.map(r => r.name))];
         const currentChecked = Array.from(container.querySelectorAll('input:checked')).map(i => i.value);
         const isFirstLoad = container.innerHTML === "";
-
         container.innerHTML = uniqueNames.map(name => {
             const isChecked = isFirstLoad || currentChecked.includes(name);
-            return `
-                <label class="exclude-item">
-                    <input type="checkbox" value="${name}" ${isChecked ? 'checked' : ''} onchange="calculateNetworkTotal()">
-                    ${name}
-                </label>
-            `;
+            return `<label class="exclude-item"><input type="checkbox" value="${name}" ${isChecked ? 'checked' : ''} onchange="calculateNetworkTotal()"> ${name}</label>`;
         }).join('');
     }
 
     function calculateNetworkTotal() {
         const selectedNames = Array.from(document.querySelectorAll('#excludeCheckboxes input:checked')).map(i => i.value);
-        let totalNetworkDebt = 0;
-
+        let total = 0;
         selectedNames.forEach(name => {
-            const userRecords = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
-            if (userRecords.length > 0) {
-                totalNetworkDebt += parseFloat(userRecords[0].remain || 0);
-            }
+            const records = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
+            if (records.length > 0) total += parseFloat(records[0].remain || 0);
         });
+        document.getElementById('displayTotalNetwork').innerText = Math.round(total).toLocaleString() + " ₪";
+    }
 
-        document.getElementById('displayTotalNetwork').innerText = Math.round(totalNetworkDebt).toLocaleString() + " ₪";
+    function exportToExcel() {
+        const filter = document.getElementById('filterName').value.trim();
+        const data = filter ? localDB.filter(r => r.name.includes(filter)) : localDB;
+        const ws = XLSX.utils.json_to_sheet(data.map(r => ({ "الموزع": r.name, "التاريخ": r.date, "البيان": r.type, "الرصيد": r.remain })));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Data");
+        XLSX.writeFile(wb, `Report_${filter || 'All'}.xlsx`);
+    }
+
+    function exportToPDF() {
+        const filter = document.getElementById('filterName').value.trim();
+        const data = (filter ? localDB.filter(r => r.name.includes(filter)) : localDB).sort((a,b) => b.ts - a.ts);
+        
+        const fileName = filter ? `كشف_حساب_${filter}.pdf` : "كشف_حساب_عام.pdf";
+        
+        const element = document.createElement('div');
+        element.style.padding = '20px';
+        element.style.direction = 'rtl';
+        element.style.fontFamily = 'Arial';
+        
+        let html = `
+            <div style="text-align: center; border-bottom: 2px solid #4338ca; padding-bottom: 10px; margin-bottom: 20px;">
+                <h1 style="color: #4338ca; margin: 0;">نظام إدارة مبيعات الفروخ</h1>
+                <p style="margin: 5px 0;">كشف حساب: ${filter || 'كافة الموزعين'}</p>
+                <p style="font-size: 12px;">تاريخ الاستخراج: ${new Date().toLocaleDateString('ar-EG')}</p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; text-align: center; font-size: 12px;">
+                <thead>
+                    <tr style="background-color: #4338ca; color: white;">
+                        <th style="padding: 10px; border: 1px solid #ddd;">الموزع</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">التاريخ</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">البيان</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">العدد</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">سابق</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">مدفوع</th>
+                        <th style="padding: 10px; border: 1px solid #ddd;">الرصيد</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+        
+        data.forEach(r => {
+            html += `<tr>
+                <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${r.name}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${r.date}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${r.type}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${r.qty || 0}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${r.old}</td>
+                <td style="padding: 8px; border: 1px solid #ddd;">${r.paid}</td>
+                <td style="padding: 8px; border: 1px solid #ddd; color: #e11d48; font-weight: bold;">${r.remain} ₪</td>
+            </tr>`;
+        });
+        
+        html += `</tbody></table>
+            <div style="margin-top: 40px; text-align: left; padding-left: 20px;">
+                <div style="display: inline-block; text-align: center;">
+                    <p style="margin-bottom: 5px; font-weight: bold;">توقيع الشبكة</p>
+                    <p style="font-family: 'Courier New', monospace; font-size: 18px; color: #4338ca; border-bottom: 1px solid #4338ca; padding: 5px;">Live_Net</p>
+                </div>
+            </div>`;
+        
+        element.innerHTML = html;
+
+        const opt = {
+            margin:       10,
+            filename:     fileName,
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        // التحميل المباشر للملف
+        html2pdf().set(opt).from(element).save();
     }
 
     function toggleUI() {
@@ -283,7 +411,6 @@
         } else {
             batchFields.forEach(el => el.classList.remove('hidden'));
             payFields.forEach(el => el.classList.add('hidden'));
-            document.getElementById('noDebtHint').style.display = 'none';
         }
         runCalc();
     }
@@ -291,8 +418,8 @@
     function fetchUserLastData() {
         if (editingId) return; 
         const name = document.getElementById('name').value.trim();
-        const userRecords = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
-        const lastBal = userRecords.length > 0 ? parseFloat(userRecords[0].remain) : 0;
+        const records = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
+        const lastBal = records.length > 0 ? parseFloat(records[0].remain) : 0;
         document.getElementById('oldDebt').value = Math.round(lastBal);
         document.getElementById('displayBal').innerText = Math.round(lastBal).toLocaleString();
         runCalc();
@@ -304,12 +431,11 @@
         const p = parseFloat(document.getElementById('price').value) || 0;
         const old = parseFloat(document.getElementById('oldDebt').value) || 0;
         const paid = parseFloat(document.getElementById('paid').value) || 0;
-        
         const currentTotal = (q * p) + old;
         const result = currentTotal - paid;
         document.getElementById('remain').value = Math.round(result);
-
-        const submitBtn = document.getElementById('submitBtn');
+        
+        const subBtn = document.getElementById('submitBtn');
         const payLimitHint = document.getElementById('payLimitHint');
         const noDebtHint = document.getElementById('noDebtHint');
 
@@ -317,132 +443,100 @@
             if (old <= 0) {
                 noDebtHint.style.display = 'block';
                 payLimitHint.style.display = 'none';
-                submitBtn.disabled = true;
-                document.getElementById('paid').value = 0;
+                subBtn.disabled = true;
             } else if (paid > old) {
                 payLimitHint.style.display = 'block';
                 noDebtHint.style.display = 'none';
-                submitBtn.disabled = true;
+                subBtn.disabled = true;
             } else {
-                payLimitHint.style.display = 'none';
                 noDebtHint.style.display = 'none';
-                submitBtn.disabled = false;
+                payLimitHint.style.display = 'none';
+                subBtn.disabled = false;
             }
         } else {
-            submitBtn.disabled = false;
-            payLimitHint.style.display = 'none';
             noDebtHint.style.display = 'none';
+            payLimitHint.style.display = 'none';
+            subBtn.disabled = false;
         }
     }
 
     function saveData() {
+        const subBtn = document.getElementById('submitBtn');
+        if(subBtn.disabled) return;
+
         const name = document.getElementById('name').value.trim();
-        const type = document.getElementById('opType').value;
-        const remainVal = parseFloat(document.getElementById('remain').value);
-        const oldVal = parseFloat(document.getElementById('oldDebt').value) || 0;
-        const paidVal = parseFloat(document.getElementById('paid').value) || 0;
-
-        if (!name) return alert("يرجى إدخال اسم الموزع");
+        if (!name) return alert("الاسم مطلوب!");
         
-        if (type === 'دفعة' && paidVal > oldVal) {
-            return alert("لا يمكن دفع مبلغ أكبر من الدين!");
-        }
-
-        let finalTypeLabel = "";
-        let cType = "";
-        if (type === "طبعة") {
-            finalTypeLabel = `طبعة (${document.getElementById('batch').value || 0})`;
-            cType = document.getElementById('chickenType').value;
-        } else {
-            const userPayments = localDB.filter(r => r.name === name && r.type.includes("دفعة")).length;
-            finalTypeLabel = `دفعة ${userPayments + 1}`;
-            cType = "-";
-        }
-
         const data = {
             name: name,
-            type: finalTypeLabel,
-            chickenType: cType,
+            type: document.getElementById('opType').value === "طبعة" ? `طبعة (${document.getElementById('batch').value})` : "دفعة مالية",
+            chickenType: document.getElementById('chickenType').value,
             date: document.getElementById('opDate').value,
             batch: document.getElementById('batch').value || 0,
             qty: document.getElementById('qty').value,
             price: document.getElementById('price').value,
-            old: Math.round(oldVal),
-            paid: Math.round(paidVal),
-            remain: Math.round(remainVal),
+            old: Math.round(document.getElementById('oldDebt').value),
+            paid: Math.round(document.getElementById('paid').value),
+            remain: Math.round(document.getElementById('remain').value),
             ts: Date.now()
         };
-
-        if (editingId) {
-            database.child(editingId).update(data).then(() => { alert("تم التعديل بنجاح ✅"); resetForm(); });
-        } else {
-            database.push(data).then(() => { alert("تم الحفظ بنجاح ✅"); resetForm(); });
-        }
+        if (editingId) database.child(editingId).update(data).then(resetForm);
+        else database.push(data).then(resetForm);
+        alert("تم الحفظ بنجاح ✅");
     }
 
     function resetForm() {
         editingId = null;
-        document.getElementById('submitBtn').innerText = "💾 حفظ وإرسال";
-        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').innerText = "💾 حفظ البيانات وإرسال";
         document.getElementById('cancelEdit').classList.add('hidden');
-        document.getElementById('paid').value = 0;
-        document.getElementById('qty').value = 0;
+        document.querySelectorAll('input:not([type=date])').forEach(i => i.value = (i.id === 'price' ? 90 : 0));
         document.getElementById('name').value = "";
-        document.getElementById('oldDebt').value = 0;
-        document.getElementById('remain').value = 0;
-        document.getElementById('displayBal').innerText = 0;
-        document.getElementById('opDate').valueAsDate = new Date();
-        document.getElementById('payLimitHint').style.display = 'none';
-        document.getElementById('noDebtHint').style.display = 'none';
     }
 
     function editItem(id) {
-        const item = localDB.find(r => r.id === id);
+        const itm = localDB.find(r => r.id === id);
         editingId = id;
-        document.getElementById('name').value = item.name;
-        document.getElementById('opType').value = item.type.includes("طبعة") ? "طبعة" : "دفعة";
-        if(item.chickenType && item.chickenType !== "-") document.getElementById('chickenType').value = item.chickenType;
-        document.getElementById('opDate').value = item.date;
-        document.getElementById('batch').value = item.batch;
-        document.getElementById('qty').value = item.qty;
-        document.getElementById('price').value = item.price;
-        document.getElementById('oldDebt').value = item.old;
-        document.getElementById('paid').value = item.paid;
-        document.getElementById('submitBtn').innerText = "🆙 تحديث";
+        document.getElementById('name').value = itm.name;
+        document.getElementById('opDate').value = itm.date;
+        document.getElementById('qty').value = itm.qty;
+        document.getElementById('price').value = itm.price;
+        document.getElementById('paid').value = itm.paid;
+        document.getElementById('oldDebt').value = itm.old;
+        document.getElementById('submitBtn').innerText = "🆙 تحديث البيانات";
         document.getElementById('cancelEdit').classList.remove('hidden');
         toggleUI();
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
-    function deleteItem(id) {
-        if (confirm("حذف العملية؟")) database.child(id).remove();
-    }
+    function deleteItem(id) { if (confirm("حذف؟")) database.child(id).remove(); }
 
     function updateDatalist() {
-        const namesList = document.getElementById('namesList');
-        const uniqueNames = [...new Set(localDB.map(r => r.name))];
-        namesList.innerHTML = uniqueNames.map(n => `<option value="${n}">`).join('');
+        const list = document.getElementById('namesList');
+        const names = [...new Set(localDB.map(r => r.name))];
+        list.innerHTML = names.map(n => `<option value="${n}">`).join('');
     }
 
     function refreshUI() {
         const tbody = document.getElementById('mainTableBody');
         tbody.innerHTML = '';
         const filter = document.getElementById('filterName').value.trim();
-        let displayData = filter ? localDB.filter(r => r.name.includes(filter)) : localDB;
+        let data = filter ? localDB.filter(r => r.name.includes(filter)) : localDB;
+        const now = Date.now();
 
-        displayData.sort((a,b) => b.ts - a.ts).forEach(item => {
+        data.sort((a,b) => b.ts - a.ts).forEach(item => {
             const isBatch = item.type.includes("طبعة");
+            const isDelayed = (item.remain > 0 && (now - item.ts > 7*24*60*60*1000));
             tbody.innerHTML += `
-                <tr class="${isBatch ? 'row-batch' : ''}">
-                    <td style="font-weight:bold">${item.name}</td>
+                <tr class="${isBatch ? 'row-batch' : ''} ${isDelayed ? 'delay-warning' : ''}">
+                    <td style="font-weight:bold">${item.name} ${isDelayed ? '⚠️' : ''}</td>
                     <td>${item.date}</td>
                     <td><span style="background:${isBatch?'#dcfce7':'#fef3c7'}; padding:4px 10px; border-radius:8px; font-size:0.8rem;">${item.type}</span></td>
-                    <td style="font-weight:bold; color:#4f46e5;">${item.chickenType || '-'}</td>
+                    <td style="font-weight:bold; color:#4f46e5;">${isBatch ? item.chickenType : '-'}</td>
                     <td>${item.qty}</td>
-                    <td style="color:#64748b;">${item.old}</td> <td style="color:#059669; font-weight:bold;">${item.paid || 0}</td>
+                    <td>${item.old}</td> <td>${item.paid}</td>
                     <td style="color:#e11d48; font-weight:bold;">${item.remain}</td>
                     <td>
-                        <button class="btn-action btn-edit" onclick="editItem('${item.id}')">✏️</button>
+                        <button class="btn-action btn-edit" onclick="editItem('${item.id}')">📝</button>
                         <button class="btn-action btn-del" onclick="deleteItem('${item.id}')">🗑️</button>
                     </td>
                 </tr>`;
