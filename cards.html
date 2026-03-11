@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
@@ -153,6 +154,16 @@
         .debt-critical { border: 3px solid var(--danger) !important; animation: pulse-red 2s infinite; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
+        /* طباعة التقارير */
+        @media print {
+            .container > *:not(.table-wrapper), .export-btns, .btn-action { display: none !important; }
+            .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+            .table-wrapper { box-shadow: none; border: 1px solid #000; }
+            th { background-color: #f1f5f9 !important; color: black !important; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; }
+            .print-footer { display: block !important; margin-top: 50px; border-top: 2px dashed #333; padding-top: 10px; text-align: left; }
+        }
+
         @media (max-width: 1024px) {
             .stats-container { grid-template-columns: 1fr 1fr; }
         }
@@ -166,6 +177,11 @@
 <body>
 
 <div class="container">
+    <div id="printHeader" class="hidden" style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #6366f1; padding-bottom: 10px;">
+        <h1 style="color: #1e293b; margin: 0;">كشف حساب - لايف نت</h1>
+        <p style="margin: 5px 0;">Live Net لخدمات الإنترنت وإدارة مبيعات الفروخ</p>
+    </div>
+
     <h2>نظام إدارة مبيعات الفروخ</h2>
 
     <div class="stats-container">
@@ -292,9 +308,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             Excel 📊
         </button>
-        <button class="btn-export" style="background:#ef4444;" onclick="exportToPDF()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            تصدير PDF 📄
+        <button class="btn-export" style="background:#ef4444;" onclick="window.print()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+            طباعة الكشف 🖨️
         </button>
         <button class="btn-export" style="background:#64748b;" onclick="downloadBackup()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -323,6 +339,11 @@
         </div>
     </div>
 
+    <div id="printFooter" class="hidden" style="margin-top: 30px; text-align: left; padding: 20px; border: 1px solid #eee;">
+        <p>توقيع الإدارة: ___________________</p>
+        <div style="font-weight: 900; color: #6366f1; font-size: 1.2rem;">Live Net | لايف نت</div>
+    </div>
+
     <div class="copyright">
         © جميع الحقوق محفوظة لـ لايف نت لخدمات الانترنت | Live Net
     </div>
@@ -341,7 +362,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database().ref('distributors');
-    const logsRef = firebase.database().ref('system_logs'); // سجل التعديلات
+    const logsRef = firebase.database().ref('system_logs');
     let localDB = [];
     let editingId = null;
     let myChart = null;
@@ -355,7 +376,7 @@
         updateDatalist();
         updateExcludeList();
         calculateNetworkTotal();
-        updateChart(); // تحديث الرسم البياني عند كل تغيير
+        updateChart(); 
     });
 
     function toggleUI() {
@@ -388,7 +409,6 @@
         document.getElementById('displayNetProfit').innerText = Math.round(totalProfitEarned).toLocaleString() + " ₪";
     }
 
-    // ميزة الرسم البياني الجديدة
     function updateChart() {
         const ctx = document.getElementById('salesChart').getContext('2d');
         const labels = [...new Array(7)].map((_, i) => {
@@ -425,21 +445,23 @@
         });
     }
 
-    // ميزة طباعة الوصل السريع
     function printReceipt(id) {
         const itm = localDB.find(r => r.id === id);
         const win = window.open('', '', 'width=350,height=500');
         win.document.write(`
-            <div dir="rtl" style="font-family:Cairo, sans-serif; text-align:center; padding:20px; border:1px solid #eee;">
-                <h2 style="margin-bottom:5px;">لايف نت - Live Net</h2>
-                <p style="font-size:12px; margin-top:0;">وصل استلام دفعة مالية</p>
-                <hr>
-                <p><strong>الموزع:</strong> ${itm.name}</p>
-                <p><strong>المبلغ:</strong> <span style="font-size:24px;">${itm.paid} ₪</span></p>
-                <p><strong>التاريخ:</strong> ${itm.date}</p>
-                <p><strong>الرصيد المتبقي:</strong> ${itm.remain} ₪</p>
-                <hr>
-                <p style="font-size:10px;">شكراً لتعاملكم معنا</p>
+            <div dir="rtl" style="font-family:Cairo, sans-serif; text-align:center; padding:20px; border:2px solid #6366f1; border-radius:15px; position:relative;">
+                <h2 style="margin-bottom:5px; color:#4f46e5;">لايف نت - Live Net</h2>
+                <p style="font-size:12px; margin-top:0; color:#64748b;">وصل استلام مالي رسمي</p>
+                <hr style="border:1px dashed #6366f1;">
+                <div style="text-align:right; margin-top:20px;">
+                    <p><strong>اسم الموزع:</strong> ${itm.name}</p>
+                    <p><strong>المبلغ المدفوع:</strong> <span style="font-size:24px; color:#10b981; font-weight:900;">${itm.paid} ₪</span></p>
+                    <p><strong>التاريخ:</strong> ${itm.date}</p>
+                    <p><strong>الرصيد المتبقي:</strong> <span style="color:#ef4444;">${itm.remain} ₪</span></p>
+                </div>
+                <hr style="border:1px dashed #6366f1;">
+                <p style="font-size:12px; font-weight:bold; color:#4f46e5; margin-top:20px;">توقيع Live Net</p>
+                <p style="font-size:10px; color:#94a3b8;">تم إصدار هذا الوصل آلياً بواسطة نظام الإدارة</p>
             </div>
         `);
         win.document.close();
@@ -479,27 +501,6 @@
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Data");
         XLSX.writeFile(wb, `Report_${filter || 'All'}.xlsx`);
-    }
-
-    function exportToPDF() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        const filter = document.getElementById('filterName').value.trim();
-        const tableRows = localDB.filter(r => {
-            let match = true;
-            if(filter && !r.name.includes(filter)) match = false;
-            if(document.getElementById('filterFrom').value && r.date < document.getElementById('filterFrom').value) match = false;
-            if(document.getElementById('filterTo').value && r.date > document.getElementById('filterTo').value) match = false;
-            return match;
-        }).sort((a,b) => b.ts - a.ts).map(r => [r.name, r.date, r.type, r.qty || 0, r.old, r.paid, r.remain + " ₪", r.note || ""]);
-        doc.autoTable({
-            startY: 30,
-            head: [['الموزع', 'التاريخ', 'البيان', 'العدد', 'سابق', 'مدفوع', 'الرصيد', 'ملاحظات']],
-            body: tableRows,
-            styles: { fontSize: 8, halign: 'right' },
-            headStyles: { fillColor: [67, 56, 202], textColor: 255, halign: 'center' }
-        });
-        doc.save("Report.pdf");
     }
 
     function downloadBackup() {
@@ -548,7 +549,10 @@
         const subBtn = document.getElementById('submitBtn');
         if(subBtn.disabled) return;
         const name = document.getElementById('name').value.trim();
-        if (!name) return alert("الاسم مطلوب!");
+        if (!name) {
+            Swal.fire('خطأ!', 'يرجى إدخال اسم الموزع', 'error');
+            return;
+        }
         const data = {
             name: name,
             type: document.getElementById('opType').value === "طبعة" ? `طبعة (${document.getElementById('batch').value})` : "دفعة مالية",
@@ -565,16 +569,17 @@
         };
         if (editingId) {
             database.child(editingId).update(data).then(() => {
-                logsRef.push({ action: "تعديل", details: data }); // تسجيل التعديل
+                logsRef.push({ action: "تعديل", details: data });
                 resetForm();
+                Swal.fire({ icon: 'success', title: 'تم التحديث بنجاح', showConfirmButton: false, timer: 1500 });
             });
         } else {
             database.push(data).then(() => {
-                logsRef.push({ action: "إضافة", details: data }); // تسجيل الإضافة
+                logsRef.push({ action: "إضافة", details: data });
                 resetForm();
+                Swal.fire({ icon: 'success', title: 'تم الحفظ بنجاح', text: 'تم تسجيل العملية في النظام', showConfirmButton: false, timer: 2000 });
             });
         }
-        alert("تم الحفظ بنجاح ✅");
     }
 
     function resetForm() {
@@ -597,17 +602,29 @@
         document.getElementById('paid').value = itm.paid;
         document.getElementById('oldDebt').value = itm.old;
         document.getElementById('note').value = itm.note || "";
-        document.getElementById('submitBtn').innerText = "🆙 تحديث البيانات";
+        document.getElementById('submitBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> تحديث البيانات`;
         document.getElementById('cancelEdit').classList.remove('hidden');
         toggleUI();
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
 
     function deleteItem(id) { 
-        if (confirm("هل أنت متأكد من الحذف؟")) {
-            logsRef.push({ action: "حذف", id: id }); // تسجيل الحذف
-            database.child(id).remove(); 
-        } 
+        Swal.fire({
+            title: 'هل أنت متأكد؟',
+            text: "لن تتمكن من التراجع عن حذف هذه العملية!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'نعم، احذف الآن',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                logsRef.push({ action: "حذف", id: id });
+                database.child(id).remove();
+                Swal.fire('تم الحذف!', 'تمت إزالة العملية بنجاح.', 'success');
+            }
+        });
     }
 
     function updateDatalist() {
@@ -645,9 +662,9 @@
                     <td style="color:var(--danger); font-weight:900;">${item.remain}</td>
                     <td style="font-size:0.8rem; color:var(--secondary); max-width:150px;">${item.note || '-'}</td>
                     <td>
-                        <button class="btn-action btn-edit" onclick="editItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                        ${!isBatch && item.paid > 0 ? `<button class="btn-action btn-print" onclick="printReceipt('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>` : ''}
-                        <button class="btn-action btn-del" onclick="deleteItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+                        <button class="btn-action btn-edit" title="تعديل" onclick="editItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                        ${!isBatch && item.paid > 0 ? `<button class="btn-action btn-print" title="وصل استلام" onclick="printReceipt('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>` : ''}
+                        <button class="btn-action btn-del" title="حذف" onclick="deleteItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
                     </td>
                 </tr>`;
         });
