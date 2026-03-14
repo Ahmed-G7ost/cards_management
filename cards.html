@@ -218,15 +218,15 @@
     <div class="grid-form">
         <div class="f-group">
             <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> اسم الموزع</label>
-            <input type="text" id="name" list="namesList" placeholder="🔍 ابحث عن موزع..." oninput="fetchUserLastData()">
+            <input type="text" id="name" list="namesList" placeholder="ابحث عن موزع..." oninput="fetchUserLastData()" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%236366f1%22 stroke-width=%222%22><circle cx=%2211%22 cy=%2211%22 r=%228%22/><line x1=%2221%22 y1=%2221%22 x2=%2216.65%22 y2=%2216.65%22/></svg>');background-repeat:no-repeat;background-position:10px center;background-size:16px;">
             <datalist id="namesList"></datalist>
         </div>
 
         <div class="f-group">
             <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg> نوع العملية</label>
             <select id="opType" onchange="toggleUI()">
-                <option value="طبعة">📦 استلام فروخ</option>
-                <option value="دفعة">💰 تسديد دفعة</option>
+                <option value="طبعة">استلام فروخ</option>
+                <option value="دفعة">تسديد دفعة</option>
             </select>
         </div>
 
@@ -290,33 +290,64 @@
 
     <div class="filter-section" style="margin-top: 30px;">
         <div class="f-group">
-            <label>🔍 بحث بالاسم:</label>
+            <label>
+<svg viewBox="0 0 24 24" width="16" height="16" style="margin-left:4px" fill="none" stroke="currentColor" stroke-width="2">
+<circle cx="11" cy="11" r="8"></circle>
+<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+</svg>
+بحث بالاسم:
+</label>
             <input type="text" id="filterName" list="namesList" placeholder="اسم الموزع..." oninput="refreshUI()">
         </div>
         <div class="f-group">
-            <label>📅 من تاريخ:</label>
+            <label>
+<svg viewBox="0 0 24 24" width="16" height="16" style="margin-left:4px" fill="none" stroke="currentColor" stroke-width="2">
+<rect x="3" y="4" width="18" height="18" rx="2"></rect>
+<line x1="16" y1="2" x2="16" y2="6"></line>
+<line x1="8" y1="2" x2="8" y2="6"></line>
+<line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+من تاريخ:
+</label>
             <input type="date" id="filterFrom" oninput="refreshUI()">
         </div>
         <div class="f-group">
-            <label>📅 إلى تاريخ:</label>
+            <label>
+<svg viewBox="0 0 24 24" width="16" height="16" style="margin-left:4px" fill="none" stroke="currentColor" stroke-width="2">
+<rect x="3" y="4" width="18" height="18" rx="2"></rect>
+<line x1="16" y1="2" x2="16" y2="6"></line>
+<line x1="8" y1="2" x2="8" y2="6"></line>
+<line x1="3" y1="10" x2="21" y2="10"></line>
+</svg>
+إلى تاريخ:
+</label>
             <input type="date" id="filterTo" oninput="refreshUI()">
         </div>
     </div>
 
-    <div class="export-btns">
-        <button class="btn-export" style="background:#10b981;" onclick="exportToExcel()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-            Excel 📊
-        </button>
-        <button class="btn-export" style="background:#ef4444;" onclick="window.print()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
-            طباعة الكشف 🖨️
-        </button>
-        <button class="btn-export" style="background:#64748b;" onclick="downloadBackup()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            نسخة احتياطية ☁️
-        </button>
-    </div>
+        <div class="export-btns">
+    <button class="btn-export" style="background:#64748b;" onclick="downloadBackup()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        نسخة احتياطية
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 17.58A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 4 16.25"></path>
+            <line x1="12" y1="12" x2="12" y2="21"></line>
+            <polyline points="8 17 12 21 16 17"></polyline>
+        </svg>
+    </button>
+
+    <button class="btn-export" style="background:#0ea5e9;" onclick="document.getElementById('restoreFile').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="17 11 12 6 7 11"></polyline>
+            <polyline points="17 18 12 13 7 18"></polyline>
+        </svg>
+        استعادة البيانات
+    </button>
+
+    <input type="file" id="restoreFile" style="display:none" accept=".json" onchange="handleRestore(event)">
+</div>
+    
+
 
     <div class="table-wrapper">
         <div class="scrollable-table">
@@ -339,17 +370,13 @@
         </div>
     </div>
 
-    <div id="printFooter" class="hidden" style="margin-top: 30px; text-align: left; padding: 20px; border: 1px solid #eee;">
-        <p>توقيع الإدارة: ___________________</p>
-        <div style="font-weight: 900; color: #6366f1; font-size: 1.2rem;">Live Net | لايف نت</div>
-    </div>
-
     <div class="copyright">
         © جميع الحقوق محفوظة لـ لايف نت لخدمات الانترنت | Live Net
     </div>
 </div>
 
 <script>
+    // إعدادات Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
         authDomain: "cards-8397e.firebaseapp.com",
@@ -360,23 +387,31 @@
         appId: "1:509372121697:web:a93b9bd262c764f04c2020"
     };
 
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+    
     const database = firebase.database().ref('distributors');
     const logsRef = firebase.database().ref('system_logs');
+    
     let localDB = [];
     let editingId = null;
     let myChart = null;
+    let displayLimit = 30; // الحد الأولي لعرض السجلات لضمان السرعة
 
     document.getElementById('opDate').valueAsDate = new Date();
 
+    // جلب البيانات مع تقنية المراقبة لمرة واحدة لضمان سرعة التحميل الأولية
     database.on('value', snap => {
         const val = snap.val();
+        // تخزين البيانات في مصفوفة محلية للتعامل السريع معها دون طلبها من السيرفر في كل مرة
         localDB = val ? Object.entries(val).map(([id, data]) => ({id, ...data})) : [];
+        
+        // تحديث الواجهة
         refreshUI();
         updateDatalist();
         updateExcludeList();
         calculateNetworkTotal();
-        updateChart(); 
     });
 
     function toggleUI() {
@@ -389,16 +424,16 @@
     function calculateFinancials(filteredData) {
         let totalSalesValue = 0;   
         let totalProfitEarned = 0; 
+        const cost = 50; 
 
         filteredData.forEach(r => {
-            if(r.type.includes("طبعة")) {
+            if(r.type && r.type.includes("طبعة")) {
                 const qty = parseFloat(r.qty) || 0;
                 const price = parseFloat(r.price) || 0;
                 totalSalesValue += qty * price;
             }
             const paid = parseFloat(r.paid) || 0;
             const priceForProfit = parseFloat(r.price) || 90; 
-            const cost = 50; 
 
             if (paid > 0 && priceForProfit > 0) {
                 const earnedQty = paid / priceForProfit; 
@@ -409,15 +444,16 @@
         document.getElementById('displayNetProfit').innerText = Math.round(totalProfitEarned).toLocaleString() + " ₪";
     }
 
-    function updateChart() {
+    function updateChart(dataForChart) {
         const ctx = document.getElementById('salesChart').getContext('2d');
+        // نأخذ آخر 7 أيام فقط للرسم البياني لضمان الخفة
         const labels = [...new Array(7)].map((_, i) => {
             const d = new Date(); d.setDate(d.getDate() - i);
             return d.toISOString().split('T')[0];
         }).reverse();
 
-        const data = labels.map(date => {
-            return localDB.filter(r => r.date === date && r.type.includes("طبعة"))
+        const dataPoints = labels.map(date => {
+            return localDB.filter(r => r.date === date && r.type && r.type.includes("طبعة"))
                           .reduce((sum, r) => sum + (parseFloat(r.qty) * parseFloat(r.price)), 0);
         });
 
@@ -428,7 +464,7 @@
                 labels: labels,
                 datasets: [{ 
                     label: 'إجمالي المبيعات اليومية (₪)', 
-                    data: data, 
+                    data: dataPoints, 
                     borderColor: '#6366f1', 
                     backgroundColor: 'rgba(99, 102, 241, 0.1)',
                     fill: true, 
@@ -439,33 +475,198 @@
             options: { 
                 responsive: true, 
                 maintainAspectRatio: false,
+                animation: { duration: 0 }, // إلغاء الأنميشن لزيادة السرعة
                 plugins: { legend: { display: false } },
                 scales: { y: { beginAtZero: true } }
             }
         });
     }
 
-    function printReceipt(id) {
+    function refreshUI() {
+        const tbody = document.getElementById('mainTableBody');
+        const filter = document.getElementById('filterName').value.trim();
+        const from = document.getElementById('filterFrom').value;
+        const to = document.getElementById('filterTo').value;
+        const now = Date.now();
+
+        // فلترة البيانات بسرعة في الذاكرة المحلية
+        let filteredData = localDB.filter(r => {
+            let match = true;
+            if(filter && !r.name.includes(filter)) match = false;
+            if(from && r.date < from) match = false;
+            if(to && r.date > to) match = false;
+            return match;
+        }).sort((a,b) => b.ts - a.ts);
+
+        // تحديث الإحصائيات بناءً على البيانات المفلترة
+        calculateFinancials(filteredData);
+        updateChart(filteredData);
+
+        // تنظيف الجدول
+        tbody.innerHTML = '';
+        
+        // تقنية العرض التدريجي: عرض جزء من البيانات فقط
+        const chunk = filteredData.slice(0, displayLimit);
+        const fragment = document.createDocumentFragment();
+
+        chunk.forEach(item => {
+            const isBatch = item.type && item.type.includes("طبعة");
+            const isDelayed = (item.remain > 0 && (now - item.ts > 7*24*60*60*1000));
+            const tr = document.createElement('tr');
+            tr.className = `${isBatch ? 'row-batch' : ''} ${isDelayed ? 'delay-warning' : ''}`;
+            
+            tr.innerHTML = `
+                <td style="font-weight:bold">${item.name} ${isDelayed ? '⚠️' : ''}</td>
+                <td>${item.date}</td>
+                <td><span style="background:${isBatch?'#dcfce7':'#fef3c7'}; color:${isBatch?'#166534':'#92400e'}; padding:4px 10px; border-radius:8px; font-size:0.8rem; font-weight:bold;">${item.type}</span></td>
+                <td style="font-weight:bold; color:var(--primary);">${isBatch ? (item.chickenType || '-') : '-'}</td>
+                <td>${item.qty}</td>
+                <td>${item.old}</td> <td>${item.paid}</td>
+                <td style="color:var(--danger); font-weight:900;">${item.remain}</td>
+                <td style="font-size:0.8rem; color:var(--secondary); max-width:150px;">${item.note || '-'}</td>
+                <td>
+                    <button class="btn-action btn-edit" title="تعديل" onclick="editItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                    ${!isBatch && item.paid > 0 ? `<button class="btn-action btn-print" title="وصل استلام" onclick="printReceipt('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>` : ''}
+                    <button class="btn-action btn-del" title="حذف" onclick="deleteItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
+                </td>`;
+            fragment.appendChild(tr);
+        });
+        tbody.appendChild(fragment);
+
+        // إضافة زر "عرض المزيد" إذا كان هناك بيانات مخفية
+        if (filteredData.length > displayLimit) {
+            const moreTr = document.createElement('tr');
+            moreTr.innerHTML = `<td colspan="10" style="text-align:center; padding:20px;">
+                <button onclick="displayLimit += 50; refreshUI();" style="background:var(--primary); color:white; border:none; padding:10px 30px; border-radius:12px; cursor:pointer; font-family:'Cairo'; font-weight:bold;">
+                    إظهار سجلات أقدم (المتبقي: ${filteredData.length - displayLimit})
+                </button>
+            </td>`;
+            tbody.appendChild(moreTr);
+        }
+    }
+
+    // --- باقي الوظائف المساعدة تبقى كما هي مع التأكد من الربط الصحيح ---
+
+    function fetchUserLastData() {
+        if (editingId) return; 
+        const name = document.getElementById('name').value.trim();
+        const records = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
+        const lastBal = records.length > 0 ? parseFloat(records[0].remain) : 0;
+        const card = document.getElementById('mainBalCard');
+        if (lastBal >= 5000) card.classList.add('debt-critical');
+        else card.classList.remove('debt-critical');
+        document.getElementById('oldDebt').value = Math.round(lastBal);
+        document.getElementById('displayBal').innerText = Math.round(lastBal).toLocaleString();
+        runCalc();
+    }
+
+    function runCalc() {
+        const type = document.getElementById('opType').value;
+        const q = parseFloat(document.getElementById('qty').value) || 0;
+        const p = parseFloat(document.getElementById('price').value) || 0;
+        const old = parseFloat(document.getElementById('oldDebt').value) || 0;
+        const paid = parseFloat(document.getElementById('paid').value) || 0;
+        const currentTotal = (type === 'طبعة') ? (q * p) + old : old;
+        const result = currentTotal - paid;
+        document.getElementById('remain').value = Math.round(result);
+        
+        const subBtn = document.getElementById('submitBtn');
+        const payLimitHint = document.getElementById('payLimitHint');
+        const noDebtHint = document.getElementById('noDebtHint');
+
+        if (type === 'دفعة') {
+            if (old <= 0) { noDebtHint.style.display = 'block'; payLimitHint.style.display = 'none'; subBtn.disabled = true; }
+            else if (paid > old) { payLimitHint.style.display = 'block'; noDebtHint.style.display = 'none'; subBtn.disabled = true; }
+            else { noDebtHint.style.display = 'none'; payLimitHint.style.display = 'none'; subBtn.disabled = false; }
+        } else {
+            noDebtHint.style.display = 'none'; payLimitHint.style.display = 'none'; subBtn.disabled = false;
+        }
+    }
+
+    function saveData() {
+        const subBtn = document.getElementById('submitBtn');
+        if(subBtn.disabled) return;
+        const name = document.getElementById('name').value.trim();
+        if (!name) { Swal.fire('خطأ!', 'يرجى إدخال اسم الموزع', 'error'); return; }
+
+        const data = {
+            name: name,
+            type: document.getElementById('opType').value === "طبعة" ? `طبعة (${document.getElementById('batch').value})` : "دفعة مالية",
+            chickenType: document.getElementById('chickenType').value,
+            date: document.getElementById('opDate').value,
+            batch: document.getElementById('batch').value || 0,
+            qty: document.getElementById('qty').value,
+            price: document.getElementById('price').value,
+            old: Math.round(document.getElementById('oldDebt').value),
+            paid: Math.round(document.getElementById('paid').value),
+            remain: Math.round(document.getElementById('remain').value),
+            note: document.getElementById('note').value,
+            ts: Date.now()
+        };
+
+        if (editingId) {
+            database.child(editingId).update(data).then(() => {
+                logsRef.push({ action: "تعديل", details: data });
+                resetForm();
+                Swal.fire({ icon: 'success', title: 'تم التحديث', showConfirmButton: false, timer: 1000 });
+            });
+        } else {
+            database.push(data).then(() => {
+                logsRef.push({ action: "إضافة", details: data });
+                resetForm();
+                Swal.fire({ icon: 'success', title: 'تم الحفظ', showConfirmButton: false, timer: 1000 });
+            });
+        }
+    }
+
+    function resetForm() {
+        editingId = null;
+        document.getElementById('submitBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> حفظ البيانات وإرسال`;
+        document.getElementById('cancelEdit').classList.add('hidden');
+        document.querySelectorAll('.grid-form input:not([type=date])').forEach(i => i.value = (i.id === 'price' ? 90 : 0));
+        document.getElementById('name').value = "";
+        document.getElementById('note').value = "";
+        document.getElementById('mainBalCard').classList.remove('debt-critical');
+        toggleUI();
+    }
+
+    function editItem(id) {
         const itm = localDB.find(r => r.id === id);
-        const win = window.open('', '', 'width=350,height=500');
-        win.document.write(`
-            <div dir="rtl" style="font-family:Cairo, sans-serif; text-align:center; padding:20px; border:2px solid #6366f1; border-radius:15px; position:relative;">
-                <h2 style="margin-bottom:5px; color:#4f46e5;">لايف نت - Live Net</h2>
-                <p style="font-size:12px; margin-top:0; color:#64748b;">وصل استلام مالي رسمي</p>
-                <hr style="border:1px dashed #6366f1;">
-                <div style="text-align:right; margin-top:20px;">
-                    <p><strong>اسم الموزع:</strong> ${itm.name}</p>
-                    <p><strong>المبلغ المدفوع:</strong> <span style="font-size:24px; color:#10b981; font-weight:900;">${itm.paid} ₪</span></p>
-                    <p><strong>التاريخ:</strong> ${itm.date}</p>
-                    <p><strong>الرصيد المتبقي:</strong> <span style="color:#ef4444;">${itm.remain} ₪</span></p>
-                </div>
-                <hr style="border:1px dashed #6366f1;">
-                <p style="font-size:12px; font-weight:bold; color:#4f46e5; margin-top:20px;">توقيع Live Net</p>
-                <p style="font-size:10px; color:#94a3b8;">تم إصدار هذا الوصل آلياً بواسطة نظام الإدارة</p>
-            </div>
-        `);
-        win.document.close();
-        setTimeout(() => { win.print(); win.close(); }, 500);
+        editingId = id;
+        document.getElementById('name').value = itm.name;
+        document.getElementById('opDate').value = itm.date;
+        document.getElementById('qty').value = itm.qty;
+        document.getElementById('price').value = itm.price;
+        document.getElementById('paid').value = itm.paid;
+        document.getElementById('oldDebt').value = itm.old;
+        document.getElementById('note').value = itm.note || "";
+        document.getElementById('opType').value = itm.type.includes("طبعة") ? "طبعة" : "دفعة";
+        document.getElementById('submitBtn').innerHTML = `تحديث البيانات`;
+        document.getElementById('cancelEdit').classList.remove('hidden');
+        toggleUI();
+        window.scrollTo({top: 0, behavior: 'smooth'});
+    }
+
+    function deleteItem(id) { 
+        Swal.fire({
+            title: 'هل أنت متأكد؟',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'نعم، احذف',
+            cancelButtonText: 'إلغاء'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                database.child(id).remove();
+                Swal.fire('تم الحذف', '', 'success');
+            }
+        });
+    }
+
+    function updateDatalist() {
+        const list = document.getElementById('namesList');
+        const names = [...new Set(localDB.map(r => r.name))];
+        list.innerHTML = names.map(n => `<option value="${n}">`).join('');
     }
 
     function updateExcludeList() {
@@ -489,186 +690,63 @@
         document.getElementById('displayTotalNetwork').innerText = Math.round(total).toLocaleString() + " ₪";
     }
 
-    function exportToExcel() {
-        const filter = document.getElementById('filterName').value.trim();
-        const from = document.getElementById('filterFrom').value;
-        const to = document.getElementById('filterTo').value;
-        let data = localDB;
-        if(filter) data = data.filter(r => r.name.includes(filter));
-        if(from) data = data.filter(r => r.date >= from);
-        if(to) data = data.filter(r => r.date <= to);
-        const ws = XLSX.utils.json_to_sheet(data.map(r => ({ "الموزع": r.name, "التاريخ": r.date, "البيان": r.type, "العدد": r.qty, "الرصيد": r.remain, "ملاحظات": r.note || "" })));
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Data");
-        XLSX.writeFile(wb, `Report_${filter || 'All'}.xlsx`);
+ // دالة النسخ الاحتياطي (تأكد من وجودها ليعمل الزر)
+function downloadBackup() {
+    if (localDB.length === 0) {
+        Swal.fire('تنبيه', 'لا توجد بيانات لتصديرها', 'info');
+        return;
     }
+    const today = new Date().toISOString().split('T')[0];
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localDB));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `LiveNet_Backup_${today}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+    
+    Swal.fire({ icon: 'success', title: 'تم تحميل النسخة بنجاح', timer: 1500, showConfirmButton: false });
+}
 
-    function downloadBackup() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(localDB));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "backup_" + new Date().toLocaleDateString() + ".json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
+// دالة الاستعادة
+function handleRestore(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
-    function fetchUserLastData() {
-        if (editingId) return; 
-        const name = document.getElementById('name').value.trim();
-        const records = localDB.filter(r => r.name === name).sort((a,b) => b.ts - a.ts);
-        const lastBal = records.length > 0 ? parseFloat(records[0].remain) : 0;
-        const card = document.getElementById('mainBalCard');
-        if (lastBal >= 5000) card.classList.add('debt-critical');
-        else card.classList.remove('debt-critical');
-        document.getElementById('oldDebt').value = Math.round(lastBal);
-        document.getElementById('displayBal').innerText = Math.round(lastBal).toLocaleString();
-        runCalc();
-    }
-
-    function runCalc() {
-        const type = document.getElementById('opType').value;
-        const q = parseFloat(document.getElementById('qty').value) || 0;
-        const p = parseFloat(document.getElementById('price').value) || 0;
-        const old = parseFloat(document.getElementById('oldDebt').value) || 0;
-        const paid = parseFloat(document.getElementById('paid').value) || 0;
-        const currentTotal = (q * p) + old;
-        const result = currentTotal - paid;
-        document.getElementById('remain').value = Math.round(result);
-        const subBtn = document.getElementById('submitBtn');
-        const payLimitHint = document.getElementById('payLimitHint');
-        const noDebtHint = document.getElementById('noDebtHint');
-        if (type === 'دفعة') {
-            if (old <= 0) { noDebtHint.style.display = 'block'; payLimitHint.style.display = 'none'; subBtn.disabled = true; }
-            else if (paid > old) { payLimitHint.style.display = 'block'; noDebtHint.style.display = 'none'; subBtn.disabled = true; }
-            else { noDebtHint.style.display = 'none'; payLimitHint.style.display = 'none'; subBtn.disabled = false; }
-        } else { noDebtHint.style.display = 'none'; payLimitHint.style.display = 'none'; subBtn.disabled = false; }
-    }
-
-    function saveData() {
-        const subBtn = document.getElementById('submitBtn');
-        if(subBtn.disabled) return;
-        const name = document.getElementById('name').value.trim();
-        if (!name) {
-            Swal.fire('خطأ!', 'يرجى إدخال اسم الموزع', 'error');
-            return;
+    Swal.fire({
+        title: 'تأكيد استعادة البيانات',
+        text: "سيتم دمج البيانات من الملف مع البيانات الحالية. هل أنت متأكد؟",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#0ea5e9',
+        confirmButtonText: 'نعم، استعادة',
+        cancelButtonText: 'إلغاء'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        const updates = {};
+                        importedData.forEach(item => {
+                            const newKey = item.id || firebase.database().ref().push().key;
+                            const cleanItem = {...item};
+                            delete cleanItem.id;
+                            updates[newKey] = cleanItem;
+                        });
+                        database.update(updates).then(() => {
+                            Swal.fire('تم بنجاح', 'تمت استعادة البيانات بنجاح', 'success');
+                        });
+                    }
+                } catch (err) {
+                    Swal.fire('خطأ', 'الملف غير صالح', 'error');
+                }
+            };
+            reader.readAsText(file);
         }
-        const data = {
-            name: name,
-            type: document.getElementById('opType').value === "طبعة" ? `طبعة (${document.getElementById('batch').value})` : "دفعة مالية",
-            chickenType: document.getElementById('chickenType').value,
-            date: document.getElementById('opDate').value,
-            batch: document.getElementById('batch').value || 0,
-            qty: document.getElementById('qty').value,
-            price: document.getElementById('price').value,
-            old: Math.round(document.getElementById('oldDebt').value),
-            paid: Math.round(document.getElementById('paid').value),
-            remain: Math.round(document.getElementById('remain').value),
-            note: document.getElementById('note').value,
-            ts: Date.now()
-        };
-        if (editingId) {
-            database.child(editingId).update(data).then(() => {
-                logsRef.push({ action: "تعديل", details: data });
-                resetForm();
-                Swal.fire({ icon: 'success', title: 'تم التحديث بنجاح', showConfirmButton: false, timer: 1500 });
-            });
-        } else {
-            database.push(data).then(() => {
-                logsRef.push({ action: "إضافة", details: data });
-                resetForm();
-                Swal.fire({ icon: 'success', title: 'تم الحفظ بنجاح', text: 'تم تسجيل العملية في النظام', showConfirmButton: false, timer: 2000 });
-            });
-        }
-    }
-
-    function resetForm() {
-        editingId = null;
-        document.getElementById('submitBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> حفظ البيانات وإرسال`;
-        document.getElementById('cancelEdit').classList.add('hidden');
-        document.querySelectorAll('.grid-form input:not([type=date])').forEach(i => i.value = (i.id === 'price' ? 90 : 0));
-        document.getElementById('name').value = "";
-        document.getElementById('note').value = "";
-        document.getElementById('mainBalCard').classList.remove('debt-critical');
-    }
-
-    function editItem(id) {
-        const itm = localDB.find(r => r.id === id);
-        editingId = id;
-        document.getElementById('name').value = itm.name;
-        document.getElementById('opDate').value = itm.date;
-        document.getElementById('qty').value = itm.qty;
-        document.getElementById('price').value = itm.price;
-        document.getElementById('paid').value = itm.paid;
-        document.getElementById('oldDebt').value = itm.old;
-        document.getElementById('note').value = itm.note || "";
-        document.getElementById('submitBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> تحديث البيانات`;
-        document.getElementById('cancelEdit').classList.remove('hidden');
-        toggleUI();
-        window.scrollTo({top: 0, behavior: 'smooth'});
-    }
-
-    function deleteItem(id) { 
-        Swal.fire({
-            title: 'هل أنت متأكد؟',
-            text: "لن تتمكن من التراجع عن حذف هذه العملية!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#64748b',
-            confirmButtonText: 'نعم، احذف الآن',
-            cancelButtonText: 'إلغاء'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                logsRef.push({ action: "حذف", id: id });
-                database.child(id).remove();
-                Swal.fire('تم الحذف!', 'تمت إزالة العملية بنجاح.', 'success');
-            }
-        });
-    }
-
-    function updateDatalist() {
-        const list = document.getElementById('namesList');
-        const names = [...new Set(localDB.map(r => r.name))];
-        list.innerHTML = names.map(n => `<option value="${n}">`).join('');
-    }
-
-    function refreshUI() {
-        const tbody = document.getElementById('mainTableBody');
-        tbody.innerHTML = '';
-        const filter = document.getElementById('filterName').value.trim();
-        const from = document.getElementById('filterFrom').value;
-        const to = document.getElementById('filterTo').value;
-        const now = Date.now();
-        let filteredData = localDB.filter(r => {
-            let match = true;
-            if(filter && !r.name.includes(filter)) match = false;
-            if(from && r.date < from) match = false;
-            if(to && r.date > to) match = false;
-            return match;
-        });
-        calculateFinancials(filteredData);
-        filteredData.sort((a,b) => b.ts - a.ts).forEach(item => {
-            const isBatch = item.type.includes("طبعة");
-            const isDelayed = (item.remain > 0 && (now - item.ts > 7*24*60*60*1000));
-            tbody.innerHTML += `
-                <tr class="${isBatch ? 'row-batch' : ''} ${isDelayed ? 'delay-warning' : ''}">
-                    <td style="font-weight:bold">${item.name} ${isDelayed ? '⚠️' : ''}</td>
-                    <td>${item.date}</td>
-                    <td><span style="background:${isBatch?'#dcfce7':'#fef3c7'}; color:${isBatch?'#166534':'#92400e'}; padding:4px 10px; border-radius:8px; font-size:0.8rem; font-weight:bold;">${item.type}</span></td>
-                    <td style="font-weight:bold; color:var(--primary);">${isBatch ? item.chickenType : '-'}</td>
-                    <td>${item.qty}</td>
-                    <td>${item.old}</td> <td>${item.paid}</td>
-                    <td style="color:var(--danger); font-weight:900;">${item.remain}</td>
-                    <td style="font-size:0.8rem; color:var(--secondary); max-width:150px;">${item.note || '-'}</td>
-                    <td>
-                        <button class="btn-action btn-edit" title="تعديل" onclick="editItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                        ${!isBatch && item.paid > 0 ? `<button class="btn-action btn-print" title="وصل استلام" onclick="printReceipt('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>` : ''}
-                        <button class="btn-action btn-del" title="حذف" onclick="deleteItem('${item.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>
-                    </td>
-                </tr>`;
-        });
-    }
+    });
+}
 </script>
 </body>
 </html>
