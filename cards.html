@@ -325,7 +325,7 @@
         </div>
     </div>
 
-        <div class="export-btns" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; margin-top: 20px; direction: rtl;">
+       <div class="export-btns" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; margin-top: 20px; direction: rtl;">
     
     <button onclick="showDailyClosing()" 
             onmouseover="this.style.transform='translateY(-3px)'; this.style.filter='brightness(1.2)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)'" 
@@ -333,6 +333,14 @@
             style="background: #8b5cf6; color: white; border: none; padding: 10px 15px; border-radius: 12px; font-family: 'Cairo'; font-weight: bold; cursor: pointer; min-width: 170px; height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
         <span>إغلاق اليوم</span>
+    </button>
+
+    <button onclick="toggleBulkUpdate()" 
+            onmouseover="this.style.transform='translateY(-3px)'; this.style.filter='brightness(1.2)'; this.style.boxShadow='0 8px 15px rgba(0,0,0,0.2)'" 
+            onmouseout="this.style.transform='translateY(0)'; this.style.filter='brightness(1)'; this.style.boxShadow='0 4px 6px rgba(0,0,0,0.1)'"
+            style="background: #f59e0b; color: white; border: none; padding: 10px 15px; border-radius: 12px; font-family: 'Cairo'; font-weight: bold; cursor: pointer; min-width: 170px; height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        <span>تعديل اسم موزع</span>
     </button>
 
     <button onclick="generateProfessionalPDF()" 
@@ -360,6 +368,26 @@
     </button>
 
     <input type="file" id="restoreFile" style="display:none" accept=".json" onchange="handleRestore(event)">
+</div>
+
+<div id="bulkUpdateSection" style="display: none; background: #fff; border: 2px solid #f59e0b; padding: 20px; border-radius: 15px; margin-top: 20px; direction: rtl; font-family: 'Cairo'; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <h3 style="margin: 0; color: #f59e0b;">تعديل شامل لاسم الموزع</h3>
+        <button onclick="toggleBulkUpdate()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">من (الاسم الحالي):</label>
+            <select id="oldNameSelect" style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; font-family:'Cairo';"></select>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <label style="display:block; margin-bottom:5px; font-weight:bold;">إلى (الاسم الجديد):</label>
+            <input type="text" id="newNameInput" placeholder="اكتب الاسم الجديد..." style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; font-family:'Cairo';">
+        </div>
+        <div style="display: flex; align-items: flex-end;">
+            <button onclick="bulkUpdateClientName()" style="background: #10b981; color: white; border: none; padding: 10px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; font-family: 'Cairo'; transition: 0.3s;">تحديث الآن</button>
+        </div>
+    </div>
 </div>
 
 
@@ -980,6 +1008,217 @@ function handleRestore(event) {
         showConfirmButton: true,
         confirmButtonText: 'إغلاق المراجعة',
         confirmButtonColor: '#6366f1',
+    });
+}
+
+    // 1. دالة إظهار وإخفاء قسم التعديل
+function toggleBulkUpdate() {
+    const section = document.getElementById('bulkUpdateSection');
+    if (!section) return;
+
+    if (section.style.display === 'none' || section.style.display === '') {
+        section.style.display = 'block';
+        populateClientSelect();
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+// 2. دالة جلب الأسماء من الجدول (أضمن طريقة لسحب الموزعين الحاليين)
+function populateClientSelect() {
+    const select = document.getElementById('oldNameSelect');
+    if (!select) return;
+
+    const rows = document.querySelectorAll('#mainTableBody tr');
+    let names = [];
+    rows.forEach(row => {
+        if (row.cells && row.cells[0]) {
+            let n = row.cells[0].innerText.trim();
+            if (n && n !== "" && n !== "-" && !n.includes("سجلات")) {
+                names.push(n);
+            }
+        }
+    });
+
+    const uniqueNames = [...new Set(names)].sort();
+    select.innerHTML = '<option value="">-- اختر الاسم الحالي --</option>';
+    uniqueNames.forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
+/**
+ * نظام Live Net - وحدة التعديل الشامل للأسماء
+ * تم التحديث لاعتماد واجهات SweetAlert2 الرسمية
+ */
+
+// 1. دالة إظهار وإخفاء قسم التعديل
+function toggleBulkUpdate() {
+    try {
+        const section = document.getElementById('bulkUpdateSection');
+        if (!section) return;
+
+        if (section.style.display === 'none' || section.style.display === '') {
+            section.style.display = 'block';
+            populateClientSelect();
+        } else {
+            section.style.display = 'none';
+        }
+    } catch (e) {
+        console.error("Error toggling section:", e);
+    }
+}
+
+// 2. دالة تعبئة قائمة الموزعين من الجدول الحالي
+function populateClientSelect() {
+    try {
+        const select = document.getElementById('oldNameSelect');
+        if (!select) return;
+
+        const rows = document.querySelectorAll('#mainTableBody tr');
+        let names = [];
+
+        rows.forEach(row => {
+            if (row.cells && row.cells.length > 0) {
+                let n = row.cells[0].innerText.trim();
+                if (n && n !== "" && n !== "-" && !n.includes("سجلات")) {
+                    names.push(n);
+                }
+            }
+        });
+
+        const uniqueNames = [...new Set(names)].sort();
+        select.innerHTML = '<option value="">-- اختر الموزع الحالي --</option>';
+        
+        uniqueNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+        });
+    } catch (e) {
+        console.error("Error populating select:", e);
+    }
+}
+
+// 1. الدالة المحدثة لجلب كل الموزعين بدون استثناء
+function populateClientSelect() {
+    try {
+        const select = document.getElementById('oldNameSelect');
+        if (!select) return;
+
+        // هان السر: بنسحب الأسماء من المصفوفة الشاملة localDB وليس من الجدول فقط
+        let allNames = [];
+        
+        if (typeof localDB !== 'undefined' && localDB.length > 0) {
+            allNames = localDB.map(item => item.name).filter(n => n && n !== "" && n !== "-");
+        } else {
+            // حل بديل: لو المصفوفة فاضية، بنسحب من الجدول كخيار أخير
+            const rows = document.querySelectorAll('#mainTableBody tr');
+            rows.forEach(row => {
+                if (row.cells && row.cells[0]) {
+                    let n = row.cells[0].innerText.trim();
+                    if (n && n !== "" && n !== "-" && !n.includes("سجلات")) allNames.push(n);
+                }
+            });
+        }
+
+        // إزالة التكرار والترتيب الأبجدي
+        const uniqueNames = [...new Set(allNames)].sort();
+        
+        select.innerHTML = '<option value="">-- اختر الموزع الحالي --</option>';
+        uniqueNames.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+        });
+        
+    } catch (e) {
+        console.error("Error populating select:", e);
+    }
+}
+
+// 2. دالة التحديث الشامل (النسخة النهائية مع SweetAlert2)
+function bulkUpdateClientName() {
+    const oldName = document.getElementById('oldNameSelect').value;
+    const newName = document.getElementById('newNameInput').value.trim();
+
+    if (!oldName || !newName) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'تنبيه',
+            text: 'يرجى اختيار الموزع وإدخال الاسم الجديد للمتابعة',
+            confirmButtonColor: '#3085d6'
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: 'تأكيد التعديل بالنظام',
+        html: `سيتم تغيير اسم الموزع من <br><b>[${oldName}]</b> إلى <b>[${newName}]</b> <br>في كافة السجلات والموزعين.`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'تأكيد التعديل',
+        cancelButtonText: 'إلغاء',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            
+            Swal.fire({
+                title: 'جاري تحديث البيانات...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const updates = {};
+            let count = 0;
+
+            // التحديث يشمل كل ما هو موجود في localDB
+            localDB.forEach(item => {
+                if (item.name === oldName) {
+                    let fireKey = item.key || item.id;
+                    if (fireKey) {
+                        updates['/distributors/' + fireKey + '/name'] = newName;
+                        updates['/records/' + fireKey + '/name'] = newName;
+                        count++;
+                    }
+                }
+            });
+
+            if (count === 0) {
+                Swal.fire('خطأ', 'لم يتم العثور على سجلات مطابقة في الذاكرة', 'error');
+                return;
+            }
+
+            firebase.database().ref().update(updates)
+            .then(() => {
+                // تحديث البيانات محلياً
+                localDB.forEach(item => {
+                    if (item.name === oldName) item.name = newName;
+                });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'تم التحديث بنجاح',
+                    text: `تم تعديل ${count} سجل بنجاح`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                document.getElementById('newNameInput').value = '';
+                toggleBulkUpdate();
+                if (typeof refreshUI === "function") refreshUI();
+            })
+            .catch(err => {
+                Swal.fire('فشل التحديث', err.message, 'error');
+            });
+        }
     });
 }
 </script>
