@@ -6,7 +6,7 @@
     <title>نظام إدارة مبيعات الفروخ</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -174,7 +174,20 @@
         }
     </style>
 </head>
+
 <body>
+    <div id="loginSection" style="display: none;">
+        <div class="login-card">
+             <h2>تسجيل دخول المسؤول</h2>
+             <input type="email" id="loginEmail" class="input-box" placeholder="البريد الإلكتروني">
+             <input type="password" id="loginPass" class="input-box" placeholder="كلمة المرور">
+             <button onclick="login()" class="btn-login">دخول للنظام</button>
+        </div>
+    </div>
+</body>
+<body>
+
+        
 
 <div class="container">
     <div id="printHeader" class="hidden" style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #6366f1; padding-bottom: 10px;">
@@ -182,7 +195,83 @@
         <p style="margin: 5px 0;">Live Net لخدمات الإنترنت وإدارة مبيعات الفروخ</p>
     </div>
 
-    <h2>نظام إدارة مبيعات الفروخ</h2>
+    <div class="header-container">
+    <h2 class="main-title">نظام إدارة مبيعات الفروخ</h2>
+
+    <button onclick="logout()" class="logout-btn-fixed">
+        <span>تسجيل الخروج</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+    </button>
+</div>
+
+<style>
+    .header-container {
+        position: relative; /* ضروري لعمل الزر المطلق */
+        display: flex;
+        justify-content: center; /* توسيط العنوان في المنتصف */
+        align-items: center;
+        width: 100%;
+        padding: 30px 0;
+        margin-bottom: 20px;
+    }
+
+    .main-title {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+        color: #2d3436;
+        text-align: center;
+        /* الخط الملون تحت العنوان */
+        background: linear-gradient(to left, transparent, #4e73df, transparent);
+        background-size: 100% 3px;
+        background-repeat: no-repeat;
+        background-position: bottom;
+        padding-bottom: 10px;
+    }
+
+    .logout-btn-fixed {
+        position: absolute; /* يخرج الزر من تدفق العناصر العادي */
+        left: 20px; /* تثبيته في أقصى الشمال */
+        top: 50%;
+        transform: translateY(-50%); /* موازنة الزر عمودياً مع العنوان */
+        
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background-color: #fff;
+        color: #e74a3b;
+        border: 2px solid #e74a3b;
+        padding: 8px 15px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: all 0.3s ease;
+    }
+
+    .logout-btn-fixed:hover {
+        background-color: #e74a3b;
+        color: #fff;
+        box-shadow: 0 5px 15px rgba(231, 74, 59, 0.3);
+    }
+
+    /* تحسين للهواتف: لو الشاشة صغيرة العنوان والزر ما يخبطوا ببعض */
+    @media (max-width: 600px) {
+        .header-container {
+            flex-direction: column;
+            gap: 20px;
+        }
+        .logout-btn-fixed {
+            position: static; /* يرجع الزر لوضعه العادي تحت العنوان في الجوال */
+            transform: none;
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
 
     <div class="stats-container">
         <div class="stat-card balance-card" id="mainBalCard">
@@ -418,7 +507,7 @@
 </div>
 
 <script>
-    // إعدادات Firebase
+   // إعدادات Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
         authDomain: "cards-8397e.firebaseapp.com",
@@ -432,29 +521,41 @@
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
     }
-    
-    const database = firebase.database().ref('distributors');
-    const logsRef = firebase.database().ref('system_logs');
-    
+
+    // المتغيرات العامة (كما هي تماماً في كودك)
     let localDB = [];
     let editingId = null;
     let myChart = null;
-    let displayLimit = 30; // الحد الأولي لعرض السجلات لضمان السرعة
+    let displayLimit = 30;
 
     document.getElementById('opDate').valueAsDate = new Date();
 
-    // جلب البيانات مع تقنية المراقبة لمرة واحدة لضمان سرعة التحميل الأولية
-    database.on('value', snap => {
-        const val = snap.val();
-        // تخزين البيانات في مصفوفة محلية للتعامل السريع معها دون طلبها من السيرفر في كل مرة
-        localDB = val ? Object.entries(val).map(([id, data]) => ({id, ...data})) : [];
-        
-        // تحديث الواجهة
-        refreshUI();
-        updateDatalist();
-        updateExcludeList();
-        calculateNetworkTotal();
+    // مراقب حالة تسجيل الدخول (لضمان جلب البيانات بعد التحقق فقط)
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            console.log("تم تسجيل الدخول: " + user.email);
+            startLiveUpdates();
+        } else {
+            window.location.href = 'login.html';
+        }
     });
+
+    // دالة جلب البيانات مع المراقبة الحية
+    function startLiveUpdates() {
+        const database = firebase.database().ref('distributors');
+        const logsRef = firebase.database().ref('system_logs');
+        
+        database.on('value', snap => {
+            const val = snap.val();
+            localDB = val ? Object.entries(val).map(([id, data]) => ({id, ...data})) : [];
+            
+            // تحديث الواجهة (دوالك الأصلية)
+            refreshUI();
+            updateDatalist();
+            updateExcludeList();
+            calculateNetworkTotal();
+        });
+    }
 
     function toggleUI() {
         const type = document.getElementById('opType').value;
@@ -488,7 +589,6 @@
 
     function updateChart(dataForChart) {
         const ctx = document.getElementById('salesChart').getContext('2d');
-        // نأخذ آخر 7 أيام فقط للرسم البياني لضمان الخفة
         const labels = [...new Array(7)].map((_, i) => {
             const d = new Date(); d.setDate(d.getDate() - i);
             return d.toISOString().split('T')[0];
@@ -517,7 +617,7 @@
             options: { 
                 responsive: true, 
                 maintainAspectRatio: false,
-                animation: { duration: 0 }, // إلغاء الأنميشن لزيادة السرعة
+                animation: { duration: 0 },
                 plugins: { legend: { display: false } },
                 scales: { y: { beginAtZero: true } }
             }
@@ -525,63 +625,57 @@
     }
 
     function refreshUI() {
-    const tbody = document.getElementById('mainTableBody');
-    const filter = document.getElementById('filterName').value.trim();
-    const from = document.getElementById('filterFrom').value;
-    const to = document.getElementById('filterTo').value;
-    const now = Date.now();
+        const tbody = document.getElementById('mainTableBody');
+        const filter = document.getElementById('filterName').value.trim();
+        const from = document.getElementById('filterFrom').value;
+        const to = document.getElementById('filterTo').value;
+        const now = Date.now();
 
-    // فلترة البيانات بسرعة في الذاكرة المحلية
-    let filteredData = localDB.filter(r => {
-        let match = true;
-        if(filter && !r.name.includes(filter)) match = false;
-        if(from && r.date < from) match = false;
-        if(to && r.date > to) match = false;
-        return match;
-    }).sort((a,b) => b.ts - a.ts);
+        let filteredData = localDB.filter(r => {
+            let match = true;
+            if(filter && !r.name.includes(filter)) match = false;
+            if(from && r.date < from) match = false;
+            if(to && r.date > to) match = false;
+            return match;
+        }).sort((a,b) => b.ts - a.ts);
 
-    // تحديث الإحصائيات بناءً على البيانات المفلترة
-    calculateFinancials(filteredData);
-    updateChart(filteredData);
+        calculateFinancials(filteredData);
+        updateChart(filteredData);
 
-    // تنظيف الجدول
-    tbody.innerHTML = '';
-    
-    // تقنية العرض التدريجي: عرض جزء من البيانات فقط
-    const chunk = filteredData.slice(0, displayLimit);
-    const fragment = document.createDocumentFragment();
-
-    chunk.forEach(item => {
-        const isBatch = item.type && item.type.includes("طبعة");
-        const isDelayed = (item.remain > 0 && (now - item.ts > 7*24*60*60*1000));
-        const tr = document.createElement('tr');
-        tr.className = `${isBatch ? 'row-batch' : ''}`;
+        if (!tbody) return;
+        tbody.innerHTML = '';
         
-        // --- تجهيز نص رسالة SMS الذكية ---
-        let smsBody = "";
-        if (isBatch) {
-            // رسالة إشعار استلام فروخ
-            smsBody = `Live Net | إشعار استلام فروخ\n` +
-                      `--------------------\n` +
-                      `الموزع: ${item.name}\n` +
-                      `النوع: ${item.chickenType || 'عام'}\n` +
-                      `العدد: ${item.qty} فرخ\n` +
-                      `الرصيد السابق: ${item.old} ₪\n` +
-                      `الرصيد الإجمالي: ${item.remain} ₪\n` +
-                      `--------------------\n` +
-                       `التاريخ: ${item.date}\n` +
-                      `شكراً لتعاملكم معنا.`;
-        } else {
-            // رسالة إشعار مالي (تسديد دفعة)
-            smsBody = `Live Net | إشعار مالي\n` +
-                      `--------------------\n` +
-                      `الموزع: ${item.name}\n` +
-                      `تم استلام دفعة بقيمة: ${item.paid} ₪\n` +
-                      `الرصيد المتبقي: ${item.remain} ₪\n` +
-                      `--------------------\n` +
-                      `التاريخ: ${item.date}\n` +
-                      `شكراً لتعاملكم معنا.`;
-        }
+        const chunk = filteredData.slice(0, displayLimit);
+        const fragment = document.createDocumentFragment();
+
+        chunk.forEach(item => {
+            const isBatch = item.type && item.type.includes("طبعة");
+            const isDelayed = (item.remain > 0 && (now - item.ts > 7*24*60*60*1000));
+            const tr = document.createElement('tr');
+            tr.className = `${isBatch ? 'row-batch' : ''}`;
+            
+            let smsBody = "";
+            if (isBatch) {
+                smsBody = `Live Net | إشعار استلام فروخ\n` +
+                          `--------------------\n` +
+                          `الموزع: ${item.name}\n` +
+                          `النوع: ${item.chickenType || 'عام'}\n` +
+                          `العدد: ${item.qty} فرخ\n` +
+                          `الرصيد السابق: ${item.old} ₪\n` +
+                          `الرصيد الإجمالي: ${item.remain} ₪\n` +
+                          `--------------------\n` +
+                          `التاريخ: ${item.date}\n` +
+                          `شكراً لتعاملكم معنا.`;
+            } else {
+                smsBody = `Live Net | إشعار مالي\n` +
+                          `--------------------\n` +
+                          `الموزع: ${item.name}\n` +
+                          `تم استلام دفعة بقيمة: ${item.paid} ₪\n` +
+                          `الرصيد المتبقي: ${item.remain} ₪\n` +
+                          `--------------------\n` +
+                          `التاريخ: ${item.date}\n` +
+                          `شكراً لتعاملكم معنا.`;
+            }
 
         const smsHref = `sms:?body=${encodeURIComponent(smsBody)}`;
 
@@ -1218,6 +1312,63 @@ function bulkUpdateClientName() {
             .catch(err => {
                 Swal.fire('فشل التحديث', err.message, 'error');
             });
+        }
+    });
+}
+
+        // هاد الكود هو "الشرطي" اللي بقرر شو يظهر
+firebase.auth().onAuthStateChanged((user) => {
+    const loginUI = document.getElementById('loginSection');
+    const mainUI = document.getElementById('mainContent');
+
+    if (user) {
+        // لو في مستخدم مسجل دخول: اظهر الموقع واخفي اللوجن
+        loginUI.style.setProperty('display', 'none', 'important');
+        mainUI.style.setProperty('display', 'block', 'important');
+    } else {
+        // لو مفيش مستخدم: اخفي الموقع واظهر اللوجن
+        loginUI.style.setProperty('display', 'flex', 'important');
+        mainUI.style.setProperty('display', 'none', 'important');
+    }
+});
+
+        function logout() {
+    Swal.fire({
+        title: 'تسجيل الخروج',
+        text: "هل أنت متأكد أنك تريد الخروج من النظام؟",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e74a3b',
+        cancelButtonColor: '#858796',
+        confirmButtonText: 'نعم، خروج',
+        cancelButtonText: 'إلغاء',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // إظهار نافذة التحميل
+            Swal.fire({
+                title: 'جاري تسجيل الخروج...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            // حركة ذكية: لو فايربيس علقت لأي سبب، حول المستخدم بعد 2 ثانية يدوياً
+            const forceLogout = setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+
+            // محاولة الخروج الرسمية من فايربيس
+            if (typeof firebase !== 'undefined' && firebase.auth()) {
+                firebase.auth().signOut().then(() => {
+                    clearTimeout(forceLogout); // الغاء المؤقت لو نجح الخروج بسرعة
+                    window.location.href = 'login.html';
+                }).catch((error) => {
+                    console.error("Firebase Error:", error);
+                    window.location.href = 'login.html'; // اخرج حتى لو في خطأ
+                });
+            } else {
+                window.location.href = 'login.html'; // اخرج لو فايربيس مش شغالة أصلاً
+            }
         }
     });
 }
