@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول | Live Net</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --primary: #4e73df;
+            --secondary: #224abe;
+            --accent: #1cc88a;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            /* خلفية متدرجة متحركة */
+            background: linear-gradient(-45deg, #4e73df, #224abe, #6610f2, #1cc88a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* الأجسام العائمة في الخلفية */
+        .circles {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            overflow: hidden; z-index: 0; margin: 0; padding: 0;
+        }
+        .circles li {
+            position: absolute; display: block; list-style: none;
+            width: 20px; height: 20px; background: rgba(255, 255, 255, 0.2);
+            animation: animate 25s linear infinite; bottom: -150px;
+        }
+        .circles li:nth-child(1){ left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
+        .circles li:nth-child(2){ left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+        .circles li:nth-child(3){ left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
+        .circles li:nth-child(4){ left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
+        .circles li:nth-child(5){ left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+        .circles li:nth-child(6){ left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
+
+        @keyframes animate {
+            0%{ transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
+            100%{ transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+        }
+
+        /* حاوية تسجيل الدخول (التأثير الزجاجي) */
+        .login-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 40px;
+            border-radius: 30px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+        .login-card:hover { transform: translateY(-5px); }
+
+        .logo-area {
+            width: 70px; height: 70px; background: var(--primary);
+            border-radius: 20px; margin: 0 auto 20px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; box-shadow: 0 10px 20px rgba(78, 115, 223, 0.3);
+        }
+
+        h2 { color: #333; margin: 10px 0; font-size: 24px; font-weight: 800; }
+        p { color: #666; font-size: 14px; margin-bottom: 30px; }
+
+        .input-group { position: relative; margin-bottom: 20px; }
+        .input-group svg {
+            position: absolute; right: 15px; top: 50%;
+            transform: translateY(-50%); color: #888; transition: 0.3s;
+        }
+
+        input {
+            width: 100%; padding: 14px 45px 14px 15px;
+            border: 2px solid transparent; border-radius: 15px;
+            background: rgba(0, 0, 0, 0.05); outline: none;
+            font-size: 16px; transition: 0.3s; box-sizing: border-box;
+        }
+        input:focus {
+            background: #fff; border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(78, 115, 223, 0.1);
+        }
+        input:focus + svg { color: var(--primary); }
+
+        button {
+            width: 100%; padding: 15px; background: var(--primary);
+            color: white; border: none; border-radius: 15px;
+            font-size: 17px; font-weight: bold; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: 0.3s; box-shadow: 0 10px 20px rgba(78, 115, 223, 0.3);
+        }
+        button:hover { background: var(--secondary); transform: scale(1.02); }
+        button:active { transform: scale(0.98); }
+
+        .footer { margin-top: 25px; font-size: 12px; color: #999; }
+    </style>
+</head>
+<body>
+
+    <ul class="circles">
+        <li></li><li></li><li></li><li></li><li></li><li></li><li></li>
+    </ul>
+
+    <div class="login-card">
+        <div class="logo-area">
+            <svg width="35" height="35" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+        </div>
+        <h2>Live Net</h2>
+        <p>نظام إدارة مبيعات الفروخ - بوابة الدخول</p>
+
+        <div class="input-group">
+            <input type="email" id="email" placeholder="البريد الإلكتروني">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        </div>
+
+        <div class="input-group">
+            <input type="password" id="pass" placeholder="كلمة المرور">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </div>
+
+        <button onclick="handleLogin()">
+            دخول للنظام
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+
+        <div class="footer">
+            © 2026 Live Net | جميع الحقوق محفوظة
+        </div>
+    </div>
+
+<script>
+    // إعدادات Firebase الخاصة بك
+    const firebaseConfig = {
+        apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
+        authDomain: "cards-8397e.firebaseapp.com",
+        databaseURL: "https://cards-8397e-default-rtdb.firebaseio.com",
+        projectId: "cards-8397e",
+        storageBucket: "cards-8397e.firebasestorage.app",
+        messagingSenderId: "509372121697",
+        appId: "1:509372121697:web:a93b9bd262c764f04c2020"
+    };
+    
+    // تشغيل فايربيس
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+    }
+
+    function handleLogin() {
+        const email = document.getElementById('email').value.trim();
+        const pass = document.getElementById('pass').value;
+
+        if (!email || !pass) {
+            Swal.fire({ icon: 'warning', title: 'تنبيه', text: 'يرجى تعبئة جميع الحقول', confirmButtonColor: '#4e73df' });
+            return;
+        }
+
+        Swal.fire({ title: 'جاري التحقق...', didOpen: () => Swal.showLoading() });
+
+        firebase.auth().signInWithEmailAndPassword(email, pass)
+            .then(() => {
+                window.location.href = 'cards.html'; 
+            })
+            .catch((error) => {
+                Swal.fire({ icon: 'error', title: 'فشل الدخول', text: 'الإيميل أو الباسورد خطأ', confirmButtonColor: '#4e73df' });
+            });
+    }
+</script>
+</body>
+</html>
