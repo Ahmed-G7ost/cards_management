@@ -507,7 +507,7 @@
 </div>
 
 <script>
-   // إعدادات Firebase
+   // 1. إعدادات Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyDm8VXj0nezKEBTgb22IwBFym_pBju_vFk",
         authDomain: "cards-8397e.firebaseapp.com",
@@ -522,7 +522,10 @@
         firebase.initializeApp(firebaseConfig);
     }
 
-    // المتغيرات العامة (كما هي تماماً في كودك)
+    // 2. تعريف المراجع بشكل عام (Global) عشان دالة الحفظ تشوفهم
+    const database = firebase.database().ref('distributors');
+    const logsRef = firebase.database().ref('system_logs');
+
     let localDB = [];
     let editingId = null;
     let myChart = null;
@@ -530,30 +533,26 @@
 
     document.getElementById('opDate').valueAsDate = new Date();
 
-    // مراقب حالة تسجيل الدخول (لضمان جلب البيانات بعد التحقق فقط)
+    // 3. مراقب حالة تسجيل الدخول
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
-            console.log("تم تسجيل الدخول: " + user.email);
+            console.log("تم تسجيل الدخول بنجاح");
             startLiveUpdates();
         } else {
             window.location.href = 'login.html';
         }
     });
 
-    // دالة جلب البيانات مع المراقبة الحية
+    // 4. دالة جلب البيانات (المراقبة الحية)
     function startLiveUpdates() {
-        const database = firebase.database().ref('distributors');
-        const logsRef = firebase.database().ref('system_logs');
-        
         database.on('value', snap => {
             const val = snap.val();
             localDB = val ? Object.entries(val).map(([id, data]) => ({id, ...data})) : [];
             
-            // تحديث الواجهة (دوالك الأصلية)
-            refreshUI();
-            updateDatalist();
-            updateExcludeList();
-            calculateNetworkTotal();
+            if (typeof refreshUI === "function") refreshUI();
+            if (typeof updateDatalist === "function") updateDatalist();
+            if (typeof updateExcludeList === "function") updateExcludeList();
+            if (typeof calculateNetworkTotal === "function") calculateNetworkTotal();
         });
     }
 
@@ -755,26 +754,108 @@
         }
     }
 
-    function saveData() {
-        const subBtn = document.getElementById('submitBtn');
-        if(subBtn.disabled) return;
-        const name = document.getElementById('name').value.trim();
-        if (!name) { Swal.fire('خطأ!', 'يرجى إدخال اسم الموزع', 'error'); return; }
+   function saveData() {
+    const subBtn = document.getElementById('submitBtn');
+    
+    // 1. منع الضغط المتكرر
+    if(subBtn && subBtn.disabled) return;
+    
+    const name = document.getElementById('name').value.trim();
+    if (!name) { 
+        Swal.fire({ icon: 'error', title: 'خطأ!', text: 'يرجى إدخال اسم الموزع' });
+        return; 
+    }
 
-        const data = {
-            name: name,
-            type: document.getElementById('opType').value === "طبعة" ? `طبعة (${document.getElementById('batch').value})` : "دفعة مالية",
-            chickenType: document.getElementById('chickenType').value,
-            date: document.getElementById('opDate').value,
-            batch: document.getElementById('batch').value || 0,
-            qty: document.getElementById('qty').value,
-            price: document.getElementById('price').value,
-            old: Math.round(document.getElementById('oldDebt').value),
-            paid: Math.round(document.getElementById('paid').value),
-            remain: Math.round(document.getElementById('remain').value),
-            note: document.getElementById('note').value,
-            ts: Date.now()
-        };
+    // 2. تجميع البيانات من الحقول
+    const data = {
+        name: name,
+        type: document.getElementById('opType').value === "طبعة" ? `طبعة (${document.getElementById('batch').value})` : "دفعة مالية",
+        chickenType: document.getElementById('chickenType').value || "عام",
+        date: document.getElementById('opDate').value,
+        batch: document.getElementById('batch').value || 0,
+        qty: parseFloat(document.getElementById('qty').value) || 0,
+        price: parseFloat(document.getElementById('price').value) || 0,
+        old: Math.round(document.getElementById('oldDebt').value) || 0,
+        paid: Math.round(document.getElementById('paid').value) || 0,
+        remain: Math.round(document.getElementById('remain').value) || 0,
+        note: document.getElementById('note').value || "",
+        ts: Date.now()
+    };
+
+    // 3. تعطيل الزر وإظهار "جاري الحفظ" بشكل احترافي
+    if(subBtn) subBtn.disabled = true;
+    
+    Swal.fire({
+        title: 'جاري الحفظ...',
+        html: 'يتم الآن مزامنة البيانات مع السيرفر',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    // 4. تنفيذ عملية الحفظ في Firebase
+    const action = editingId ? database.child(editingId).update(data) : database.push(data);
+
+    action.then(() => {
+        // تسجيل العملية في اللوج
+        if(typeof logsRef !== 'undefined') {
+            logsRef.push({ 
+                action: editingId ? "تعديل" : "إضافة", 
+                details: data, 
+                user: firebase.auth().currentUser.email 
+            });
+        }
+
+        // 5. رسالة النجاح الاحترافية
+        Swal.fire({
+            icon: 'success',
+            title: editingId ? 'تم التحديث بنجاح' : 'تم الحفظ بنجاح',
+            text: 'تم تحديث سجلات Live Net',
+            timer: 2000,
+            showConfirmButton: false,
+            timerProgressBar: true,
+            didClose: () => {
+                // إعادة ضبط الواجهة بعد إغلاق الرسالة
+                if(subBtn) subBtn.disabled = false;
+                if(typeof resetForm === "function") {
+                    resetForm();
+                } else {
+                    document.getElementById('name').value = '';
+                    document.getElementById('paid').value = '0';
+                    document.getElementById('qty').value = '';
+                }
+                editingId = null;
+                if(typeof runCalc === "function") runCalc();
+            }
+        });
+    }).catch(err => {
+        // في حال حدوث خطأ
+        if(subBtn) subBtn.disabled = false;
+        Swal.fire({
+            icon: 'error',
+            title: 'فشل الحفظ!',
+            text: 'تأكد من اتصال الإنترنت: ' + err.message
+        });
+    });
+}
+
+// دالة مساعدة لإنهاء العملية (توفيراً للكود)
+function finalizeSave(msg) {
+    resetForm();
+    editingId = null;
+    const subBtn = document.getElementById('submitBtn');
+    if(subBtn) subBtn.disabled = false;
+    Swal.fire({ icon: 'success', title: msg, showConfirmButton: false, timer: 1500 });
+}
+
+// دالة معالجة الأخطاء
+function handleSaveError(err) {
+    const subBtn = document.getElementById('submitBtn');
+    if(subBtn) subBtn.disabled = false;
+    console.error("Firebase Error:", err);
+    Swal.fire('خطأ!', 'فشل في العملية: ' + err.message, 'error');
+}
 
         if (editingId) {
             database.child(editingId).update(data).then(() => {
@@ -789,7 +870,7 @@
                 Swal.fire({ icon: 'success', title: 'تم الحفظ', showConfirmButton: false, timer: 1000 });
             });
         }
-    }
+
 
     function resetForm() {
         editingId = null;
